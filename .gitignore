@@ -7,3 +7,6 @@
 # Ignore all pychache files
 __pycache__/
 *.pyc
+
+# Ignore tokens files
+tokens.json

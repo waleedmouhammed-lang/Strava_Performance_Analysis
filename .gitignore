@@ -7,6 +7,3 @@
 # Ignore all pychache files
 __pycache__/
 *.pyc
-
-# Ignore all .json files
-*.json

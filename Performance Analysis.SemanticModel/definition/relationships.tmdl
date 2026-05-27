@@ -1,0 +1,15 @@
+relationship e879971c-d0e6-4d0f-9b37-377631422e14
+	joinOnDateBehavior: datePartOnly
+	fromColumn: 'Strava Activities'.start_date
+	toColumn: LocalDateTable_34e7307d-4420-427d-8d7e-fb40ade7016c.Date
+
+relationship 6e878994-a96e-43a9-9bc5-453c3c697f06
+	joinOnDateBehavior: datePartOnly
+	fromColumn: 'Strava Activities'.start_date_local
+	toColumn: LocalDateTable_f916e506-4f59-4982-a58f-32e8274a9a02.Date
+
+relationship f3c8b548-4c3f-41d6-b9e5-514270b2cc7f
+	joinOnDateBehavior: datePartOnly
+	fromColumn: 'Strava Activities'.date
+	toColumn: LocalDateTable_6a17051c-337f-4bdd-a23e-6826fdfcbf9f.Date
+

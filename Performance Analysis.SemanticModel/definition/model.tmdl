@@ -1,0 +1,22 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["Strava Activities"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table 'Strava Activities'
+ref table DateTableTemplate_260a701c-8ad7-4a4f-9299-258c1e39d597
+ref table LocalDateTable_34e7307d-4420-427d-8d7e-fb40ade7016c
+ref table LocalDateTable_f916e506-4f59-4982-a58f-32e8274a9a02
+ref table LocalDateTable_6a17051c-337f-4bdd-a23e-6826fdfcbf9f
+
+ref cultureInfo en-US
+

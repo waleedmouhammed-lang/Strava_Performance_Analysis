@@ -1,0 +1,376 @@
+table FactActivities
+	lineageTag: c7d53dca-df58-42b0-91df-f7632ad4ea86
+
+	column id
+		dataType: int64
+		formatString: 0
+		lineageTag: 1ed201ee-cbd0-44fd-80d1-296aa51dd787
+		summarizeBy: none
+		sourceColumn: id
+
+		annotation SummarizationSetBy = User
+
+	column date_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ee568ec3-da7d-4a7e-840f-add05455e3a6
+		summarizeBy: none
+		sourceColumn: date_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column activity_type_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 7cd18187-16b6-48de-9aff-eea429b3f6b0
+		summarizeBy: none
+		sourceColumn: activity_type_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column geography_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 01162d25-fef4-42bd-bdd8-a28017548129
+		summarizeBy: none
+		sourceColumn: geography_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column hr_zone_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 7ac4223e-1923-44c5-8a56-3ed5315f30b9
+		summarizeBy: none
+		sourceColumn: hr_zone_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column athlete_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c272e56b-afa1-48cd-929f-84e5549769c2
+		summarizeBy: none
+		sourceColumn: athlete_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column distance_km
+		dataType: double
+		lineageTag: e34c8a0f-df93-453a-9fe9-5501db6eb756
+		summarizeBy: sum
+		sourceColumn: distance_km
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column distance_bucket
+		dataType: string
+		lineageTag: 9f5de879-11bf-40b1-b390-a5bbbd7bbebc
+		summarizeBy: none
+		sourceColumn: distance_bucket
+
+		annotation SummarizationSetBy = Automatic
+
+	column pace_min_per_km
+		dataType: double
+		lineageTag: e4a961e1-d00a-4838-b41e-f54a6864b895
+		summarizeBy: sum
+		sourceColumn: pace_min_per_km
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column average_speed_kmh
+		dataType: double
+		lineageTag: dee06f27-1537-4afd-85db-0f62b9db8568
+		summarizeBy: sum
+		sourceColumn: average_speed_kmh
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column max_speed_kmh
+		dataType: double
+		lineageTag: 01243764-ddac-4a21-98cf-0ca1a21a95bd
+		summarizeBy: sum
+		sourceColumn: max_speed_kmh
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column moving_time_min
+		dataType: double
+		lineageTag: d04a02be-f57e-4d64-b264-9415bcada45c
+		summarizeBy: sum
+		sourceColumn: moving_time_min
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column elapsed_time_min
+		dataType: double
+		lineageTag: 9512d9d3-1761-413b-8014-6984a346cbd4
+		summarizeBy: sum
+		sourceColumn: elapsed_time_min
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_elevation_gain
+		dataType: double
+		lineageTag: 02def922-51dc-45b9-9e89-d0627b9c520c
+		summarizeBy: sum
+		sourceColumn: total_elevation_gain
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column elev_high
+		dataType: double
+		lineageTag: 2c5e2c84-9393-4b14-b5dc-aa045771bbb1
+		summarizeBy: sum
+		sourceColumn: elev_high
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column elev_low
+		dataType: double
+		lineageTag: 8fd9548a-7ce6-4d8d-8038-4e1b654073ab
+		summarizeBy: sum
+		sourceColumn: elev_low
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column average_heartrate
+		dataType: double
+		lineageTag: b4217f83-677f-46aa-bd45-72cacf87b781
+		summarizeBy: sum
+		sourceColumn: average_heartrate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column max_heartrate
+		dataType: int64
+		formatString: 0
+		lineageTag: d1c83f37-7a52-4e00-b5c0-2813dc8e78a4
+		summarizeBy: sum
+		sourceColumn: max_heartrate
+
+		annotation SummarizationSetBy = Automatic
+
+	column average_cadence
+		dataType: double
+		lineageTag: fe724f5e-b4f9-4b8c-a1e2-cc7cdf1ae4a2
+		summarizeBy: sum
+		sourceColumn: average_cadence
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column suffer_score
+		dataType: int64
+		formatString: 0
+		lineageTag: d4b182ea-e904-4fff-a69c-3719b528f4e1
+		summarizeBy: sum
+		sourceColumn: suffer_score
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactActivities = m
+		mode: import
+		source =
+				let
+				    // ═══════════════════════════════════════════════════════════════════════════
+				    // FACT_ACTIVITIES  v2 — fixed FK lookup scoping for activity_type and hr_zone
+				    // ═══════════════════════════════════════════════════════════════════════════
+				
+				    Source            = #"Strava Activities",
+				
+				    // ── STEP 1: Select columns ─────────────────────────────────────────────────
+				    Selected          = Table.SelectColumns(Source, {
+				                            "id", "date", "athlete_id",
+				                            "name", "is_outdoor", "has_route",
+				                            "start_lat", "start_lng", "end_lat", "end_lng",
+				                            "timezone", "utc_offset", "hr_zone",
+				                            "distance_km", "moving_time_min", "elapsed_time_min",
+				                            "total_elevation_gain", "pace_min_per_km",
+				                            "average_speed_kmh", "max_speed_kmh",
+				                            "average_heartrate", "max_heartrate",
+				                            "average_cadence", "suffer_score",
+				                            "elev_high", "elev_low", "distance_bucket"
+				                        }),
+				
+				    // ── STEP 2: Enforce types ──────────────────────────────────────────────────
+				    Typed             = Table.TransformColumnTypes(Selected, {
+				                            {"id",                   Int64.Type},
+				                            {"date",                 type date},
+				                            {"athlete_id",           Int64.Type},
+				                            {"name",                 type text},
+				                            {"is_outdoor",           type logical},
+				                            {"has_route",            type logical},
+				                            {"start_lat",            type number},
+				                            {"start_lng",            type number},
+				                            {"end_lat",              type number},
+				                            {"end_lng",              type number},
+				                            {"timezone",             type text},
+				                            {"utc_offset",           Int64.Type},
+				                            {"hr_zone",              type text},
+				                            {"distance_km",          type number},
+				                            {"moving_time_min",      type number},
+				                            {"elapsed_time_min",     type number},
+				                            {"total_elevation_gain", type number},
+				                            {"pace_min_per_km",      type number},
+				                            {"average_speed_kmh",    type number},
+				                            {"max_speed_kmh",        type number},
+				                            {"average_heartrate",    type number},
+				                            {"max_heartrate",        Int64.Type},
+				                            {"average_cadence",      type number},
+				                            {"suffer_score",         Int64.Type},
+				                            {"elev_high",            type number},
+				                            {"elev_low",             type number},
+				                            {"distance_bucket",      type text}
+				                        }),
+				
+				    // ── STEP 3: FK → date_key ──────────────────────────────────────────────────
+				    WithDateKey       = Table.AddColumn(Typed, "date_key",
+				                            each Date.Year([date]) * 10000
+				                               + Date.Month([date]) * 100
+				                               + Date.Day([date]),
+				                            Int64.Type),
+				
+				    // ── STEP 4: FK → activity_type_key ────────────────────────────────────────
+				    //    Capture row values into let-variables BEFORE entering Table.SelectRows
+				    //    so the lambda _ refers only to DimActivityType rows, not fact rows.
+				    DimActivity       = DimActivityType,
+				    WithActivityKey   = Table.AddColumn(WithDateKey, "activity_type_key",
+				                            each
+				                                let
+				                                    fName       = [name],
+				                                    fIsOutdoor  = [is_outdoor],
+				                                    fHasRoute   = [has_route],
+				                                    row = Table.SelectRows(DimActivity,
+				                                              each [name]       = fName
+				                                                and [is_outdoor] = fIsOutdoor
+				                                                and [has_route]  = fHasRoute)
+				                                in
+				                                    if Table.IsEmpty(row)
+				                                    then null
+				                                    else row{0}[activity_type_key],
+				                            Int64.Type),
+				
+				    // ── STEP 5: FK → geography_key ────────────────────────────────────────────
+				    DimGeo            = DimGeography,
+				    WithGeoKey        = Table.AddColumn(WithActivityKey, "geography_key",
+				                            each
+				                                let
+				                                    rStartLat = if [start_lat] = null then null
+				                                                else Number.Round([start_lat], 3),
+				                                    rStartLng = if [start_lng] = null then null
+				                                                else Number.Round([start_lng], 3),
+				                                    rEndLat   = if [end_lat] = null then null
+				                                                else Number.Round([end_lat], 3),
+				                                    rEndLng   = if [end_lng] = null then null
+				                                                else Number.Round([end_lng], 3),
+				                                    rOffset   = [utc_offset],
+				                                    row       = Table.SelectRows(DimGeo,
+				                                                    each [start_lat]  = rStartLat
+				                                                     and [start_lng]  = rStartLng
+				                                                     and [end_lat]    = rEndLat
+				                                                     and [end_lng]    = rEndLng
+				                                                     and [utc_offset] = rOffset)
+				                                in
+				                                    if Table.IsEmpty(row)
+				                                    then null
+				                                    else row{0}[geography_key],
+				                            Int64.Type),
+				
+				    // ── STEP 6: FK → hr_zone_key ──────────────────────────────────────────────
+				    //    Null hr_zone → key 0 (No Data row). Non-null captured into let-variable.
+				    DimHR             = DimHRZone,
+				    WithHRKey         = Table.AddColumn(WithGeoKey, "hr_zone_key",
+				                            each
+				                                if [hr_zone] = null then 0
+				                                else
+				                                    let
+				                                        fZone = [hr_zone],
+				                                        row   = Table.SelectRows(DimHR,
+				                                                    each [hr_zone] = fZone)
+				                                    in
+				                                        if Table.IsEmpty(row)
+				                                        then null
+				                                        else row{0}[hr_zone_key],
+				                            Int64.Type),
+				
+				    // ── STEP 7: FK → athlete_key ──────────────────────────────────────────────
+				    DimAth            = DimAthlete,
+				    WithAthleteKey    = Table.AddColumn(WithHRKey, "athlete_key",
+				                            each
+				                                let
+				                                    fAthleteId = [athlete_id],
+				                                    row = Table.SelectRows(DimAth,
+				                                              each [athlete_id] = fAthleteId)
+				                                in
+				                                    if Table.IsEmpty(row)
+				                                    then null
+				                                    else row{0}[athlete_key],
+				                            Int64.Type),
+				
+				    // ── STEP 8: Drop raw join columns ─────────────────────────────────────────
+				    Cleaned           = Table.RemoveColumns(WithAthleteKey, {
+				                            "name", "is_outdoor", "has_route",
+				                            "start_lat", "start_lng",
+				                            "end_lat",   "end_lng",
+				                            "timezone",  "utc_offset",
+				                            "hr_zone",   "athlete_id",
+				                            "date"
+				                        }),
+				
+				    // ── STEP 9: Final column order ─────────────────────────────────────────────
+				    Reordered         = Table.ReorderColumns(Cleaned, {
+				                            "id",
+				                            "date_key", "activity_type_key", "geography_key",
+				                            "hr_zone_key", "athlete_key",
+				                            "distance_km", "distance_bucket",
+				                            "pace_min_per_km", "average_speed_kmh", "max_speed_kmh",
+				                            "moving_time_min", "elapsed_time_min",
+				                            "total_elevation_gain", "elev_high", "elev_low",
+				                            "average_heartrate", "max_heartrate",
+				                            "average_cadence", "suffer_score"
+				                        })
+				in
+				    Reordered
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

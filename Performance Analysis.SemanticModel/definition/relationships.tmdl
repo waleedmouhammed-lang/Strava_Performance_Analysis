@@ -1,15 +1,20 @@
-relationship e879971c-d0e6-4d0f-9b37-377631422e14
-	joinOnDateBehavior: datePartOnly
-	fromColumn: 'Strava Activities'.start_date
-	toColumn: LocalDateTable_34e7307d-4420-427d-8d7e-fb40ade7016c.Date
+relationship AutoDetected_cbcd1df4-b898-49a4-be73-dda91a66e65a
+	fromColumn: FactActivities.date_key
+	toColumn: DimDate.DateKey
 
-relationship 6e878994-a96e-43a9-9bc5-453c3c697f06
-	joinOnDateBehavior: datePartOnly
-	fromColumn: 'Strava Activities'.start_date_local
-	toColumn: LocalDateTable_f916e506-4f59-4982-a58f-32e8274a9a02.Date
+relationship AutoDetected_f41e730d-64c8-4e40-a7e4-162377843568
+	fromColumn: FactActivities.hr_zone_key
+	toColumn: DimHRZone.hr_zone_key
 
-relationship f3c8b548-4c3f-41d6-b9e5-514270b2cc7f
-	joinOnDateBehavior: datePartOnly
-	fromColumn: 'Strava Activities'.date
-	toColumn: LocalDateTable_6a17051c-337f-4bdd-a23e-6826fdfcbf9f.Date
+relationship AutoDetected_5a2fd05e-f2c8-490b-8d49-dd9dc465169f
+	fromColumn: FactActivities.athlete_key
+	toColumn: DimAthlete.athlete_key
+
+relationship AutoDetected_94b64104-7793-421e-afd9-de7214425e9f
+	fromColumn: FactActivities.activity_type_key
+	toColumn: DimActivityType.activity_type_key
+
+relationship AutoDetected_4a1b0006-4b55-458e-9910-971437056d55
+	fromColumn: FactActivities.geography_key
+	toColumn: DimGeography.geography_key
 

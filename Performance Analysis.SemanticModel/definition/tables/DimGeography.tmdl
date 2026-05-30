@@ -1,0 +1,208 @@
+table DimGeography
+	lineageTag: c69e7604-770b-4813-a5ff-44d5319d9eb0
+
+	column geography_key
+		dataType: int64
+		isKey
+		formatString: 0
+		lineageTag: 26facdfa-c151-4616-bab1-a577a04c3bb6
+		summarizeBy: none
+		sourceColumn: geography_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column area_label
+		dataType: string
+		lineageTag: 3d77d3cb-6496-4fbd-b6fc-b447fcb2670d
+		dataCategory: Place
+		summarizeBy: none
+		sourceColumn: area_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column city
+		dataType: string
+		lineageTag: b4b87247-8d15-4747-885d-9ef665176190
+		dataCategory: City
+		summarizeBy: none
+		sourceColumn: city
+
+		annotation SummarizationSetBy = Automatic
+
+	column country
+		dataType: string
+		lineageTag: 12d11bb6-9de9-4356-9a63-e2687ebebcf5
+		dataCategory: Country
+		summarizeBy: none
+		sourceColumn: country
+
+		annotation SummarizationSetBy = Automatic
+
+	column start_lat
+		dataType: double
+		lineageTag: e61d9121-141d-40cd-82dd-124b0faf3756
+		dataCategory: Latitude
+		summarizeBy: none
+		sourceColumn: start_lat
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column start_lng
+		dataType: double
+		lineageTag: 25109fab-ef3b-4e7c-8834-b63cb65b0db7
+		dataCategory: Longitude
+		summarizeBy: none
+		sourceColumn: start_lng
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column end_lat
+		dataType: double
+		lineageTag: f3d39dcc-30e1-4161-9ce3-03476b913eb4
+		dataCategory: Latitude
+		summarizeBy: none
+		sourceColumn: end_lat
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column end_lng
+		dataType: double
+		lineageTag: a1837518-4762-41df-926f-c7f925773778
+		dataCategory: Longitude
+		summarizeBy: none
+		sourceColumn: end_lng
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column timezone_iana
+		dataType: string
+		lineageTag: 510d33ab-130e-4804-a2aa-94e5e2b0ee68
+		summarizeBy: none
+		sourceColumn: timezone_iana
+
+		annotation SummarizationSetBy = Automatic
+
+	column timezone
+		dataType: string
+		lineageTag: a2bfa302-595c-4d50-84ff-8b9aa5d7aa9f
+		summarizeBy: none
+		sourceColumn: timezone
+
+		annotation SummarizationSetBy = Automatic
+
+	column utc_offset
+		dataType: int64
+		formatString: 0
+		lineageTag: 734fb686-a357-4838-9a65-4d342659a2c2
+		summarizeBy: none
+		sourceColumn: utc_offset
+
+		annotation SummarizationSetBy = Automatic
+
+	column utc_offset_label
+		dataType: string
+		lineageTag: 0dfbaa74-b455-4082-9939-d3c890104a12
+		summarizeBy: none
+		sourceColumn: utc_offset_label
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimGeography = m
+		mode: import
+		source =
+				let
+				    // ── 1. Pull geographic columns from the fact table ─────────────────────────
+				    FactTable         = #"Strava Activities",
+				    Selected          = Table.SelectColumns(FactTable, {
+				                            "start_lat", "start_lng",
+				                            "end_lat",   "end_lng",
+				                            "timezone",  "utc_offset"
+				                        }),
+				
+				    // ── 2. Enforce correct types ───────────────────────────────────────────────
+				    Typed             = Table.TransformColumnTypes(Selected, {
+				                            {"start_lat",  type number},
+				                            {"start_lng",  type number},
+				                            {"end_lat",    type number},
+				                            {"end_lng",    type number},
+				                            {"timezone",   type text},
+				                            {"utc_offset", Int64.Type}
+				                        }),
+				
+				    // ── 3. Round coordinates to 3 decimal places (~111 m precision) ───────────
+				    //    This clusters nearby GPS points into a single geography row,
+				    //    preventing a near-unique row per activity while preserving
+				    //    enough precision to distinguish different neighbourhoods.
+				    Rounded           = Table.TransformColumns(Typed, {
+				                            {"start_lat", each if _ = null then null else Number.Round(_, 3), type number},
+				                            {"start_lng", each if _ = null then null else Number.Round(_, 3), type number},
+				                            {"end_lat",   each if _ = null then null else Number.Round(_, 3), type number},
+				                            {"end_lng",   each if _ = null then null else Number.Round(_, 3), type number}
+				                        }),
+				
+				    // ── 4. Deduplicate on the rounded footprint + timezone ────────────────────
+				    Distinct          = Table.Distinct(Rounded),
+				
+				    // ── 5. Surrogate key ───────────────────────────────────────────────────────
+				    WithKey           = Table.AddIndexColumn(Distinct, "geography_key", 1, 1, Int64.Type),
+				
+				    // ── 6. Derive area label from timezone + null check ───────────────────────
+				    //    Null coordinates = indoor session with no GPS fix.
+				    //    The two Cairo clusters are separated by their rounded start_lat
+				    //    (30.374–30.377 = Maadi area, 31.309 = Heliopolis area).
+				    WithAreaLabel     = Table.AddColumn(WithKey, "area_label",
+				                            each
+				                                if [start_lat] = null then "Indoor – No GPS"
+				                                else if Number.Round([start_lat], 1) = 30.4 then "Cairo – Maadi"
+				                                else if Number.Round([start_lat], 1) = 31.3 then "Cairo – Heliopolis"
+				                                else "Cairo – Other",
+				                            type text),
+				
+				    // ── 7. Derive city and country from timezone ───────────────────────────────
+				    WithCity          = Table.AddColumn(WithAreaLabel, "city",
+				                            each
+				                                if [start_lat] = null then null
+				                                else "Cairo",
+				                            type text),
+				    WithCountry       = Table.AddColumn(WithCity, "country",
+				                            each "Egypt", type text),
+				
+				    // ── 8. Extract clean IANA timezone identifier ──────────────────────────────
+				    //    Source format: "(GMT+02:00) Africa/Cairo" → extract the IANA part
+				    WithIANA          = Table.AddColumn(WithCountry, "timezone_iana",
+				                            each
+				                                let raw = [timezone]
+				                                in if raw = null then null
+				                                   else Text.Trim(Text.AfterDelimiter(raw, ") ")),
+				                            type text),
+				
+				    // ── 9. UTC offset label ────────────────────────────────────────────────────
+				    WithOffsetLabel   = Table.AddColumn(WithIANA, "utc_offset_label",
+				                            each "UTC+" & Text.From([utc_offset]),
+				                            type text),
+				
+				    // ── 10. Final column order ─────────────────────────────────────────────────
+				    Reordered         = Table.ReorderColumns(WithOffsetLabel, {
+				                            "geography_key",
+				                            "area_label",
+				                            "city", "country",
+				                            "start_lat", "start_lng",
+				                            "end_lat",   "end_lng",
+				                            "timezone_iana", "timezone",
+				                            "utc_offset", "utc_offset_label"
+				                        })
+				in
+				    Reordered
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

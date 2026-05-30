@@ -1,0 +1,126 @@
+expression 'Strava Activities' = ```
+		let
+		  Source = Csv.Document(
+		    File.Contents(
+		      "C:\Users\waleedmouhammed\OneDrive\Desktop\strava_project\Strava_Performance_Analysis\output\strava_activities.csv"
+		    ), 
+		    [Delimiter = ",", Columns = 68, Encoding = 65001, QuoteStyle = QuoteStyle.None]
+		  ), 
+		  PromotedHeaders = Table.PromoteHeaders(Source, [PromoteAllScalars = true]), 
+		  ChangedType = Table.TransformColumnTypes(
+		    PromotedHeaders, 
+		    {
+		      {"resource_state", Int64.Type}, 
+		      {"name", type text}, 
+		      {"total_elevation_gain", type number}, 
+		      {"type", type text}, 
+		      {"sport_type", type text}, 
+		      {"workout_type", type text}, 
+		      {"id", Int64.Type}, 
+		      {"start_date", type datetime}, 
+		      {"start_date_local", type datetime}, 
+		      {"timezone", type text}, 
+		      {"utc_offset", Int64.Type}, 
+		      {"location_city", type text}, 
+		      {"location_state", type text}, 
+		      {"location_country", type text}, 
+		      {"achievement_count", Int64.Type}, 
+		      {"kudos_count", Int64.Type}, 
+		      {"comment_count", Int64.Type}, 
+		      {"athlete_count", Int64.Type}, 
+		      {"photo_count", Int64.Type}, 
+		      {"trainer", type logical}, 
+		      {"commute", type logical}, 
+		      {"manual", type logical}, 
+		      {"private", type logical}, 
+		      {"visibility", type text}, 
+		      {"flagged", type logical}, 
+		      {"gear_id", type text}, 
+		      {"has_heartrate", type logical}, 
+		      {"average_heartrate", type number}, 
+		      {"max_heartrate", Int64.Type}, 
+		      {"heartrate_opt_out", type logical}, 
+		      {"display_hide_heartrate_option", type logical}, 
+		      {"elev_high", type number}, 
+		      {"elev_low", type number}, 
+		      {"upload_id", Int64.Type}, 
+		      {"upload_id_str", Int64.Type}, 
+		      {"external_id", type text}, 
+		      {"from_accepted_tag", type logical}, 
+		      {"pr_count", Int64.Type}, 
+		      {"total_photo_count", Int64.Type}, 
+		      {"has_kudoed", type logical}, 
+		      {"suffer_score", Int64.Type}, 
+		      {"average_cadence", type number}, 
+		      {"device_name", type text}, 
+		      {"athlete_id", Int64.Type}, 
+		      {"has_route", type logical}, 
+		      {"start_lat", type number}, 
+		      {"start_lng", type number}, 
+		      {"end_lat", type number}, 
+		      {"end_lng", type number}, 
+		      {"distance_km", type number}, 
+		      {"moving_time_min", type number}, 
+		      {"elapsed_time_min", type number}, 
+		      {"average_speed_kmh", type number}, 
+		      {"max_speed_kmh", type number}, 
+		      {"date", type date}, 
+		      {"year", Int64.Type}, 
+		      {"month", Int64.Type}, 
+		      {"month_name", type text}, 
+		      {"day_of_week", Int64.Type}, 
+		      {"day_name", type text}, 
+		      {"hour_of_day", Int64.Type}, 
+		      {"week_of_year", Int64.Type}, 
+		      {"is_weekend", type logical}, 
+		      {"time_of_day", type text}, 
+		      {"pace_min_per_km", type number}, 
+		      {"is_outdoor", type logical}, 
+		      {"distance_bucket", type text}, 
+		      {"hr_zone", type text}
+		    }
+		  ), 
+		  RemovedColumns = Table.RemoveColumns(
+		    ChangedType, 
+		    {
+		      "resource_state", 
+		      "type", 
+		      "sport_type", 
+		      "workout_type", 
+		      "location_city", 
+		      "location_state", 
+		      "location_country", 
+		      "achievement_count", 
+		      "kudos_count", 
+		      "comment_count", 
+		      "athlete_count", 
+		      "photo_count", 
+		      "trainer", 
+		      "commute", 
+		      "manual", 
+		      "private", 
+		      "visibility", 
+		      "flagged", 
+		      "gear_id", 
+		      "has_heartrate", 
+		      "heartrate_opt_out", 
+		      "display_hide_heartrate_option", 
+		      "upload_id", 
+		      "upload_id_str", 
+		      "external_id", 
+		      "from_accepted_tag", 
+		      "pr_count", 
+		      "total_photo_count", 
+		      "has_kudoed", 
+		      "device_name"
+		    }
+		  )
+		in
+		  RemovedColumns
+		```
+	lineageTag: 2777de33-e6d4-455d-8230-f2136ca760af
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

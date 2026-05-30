@@ -1,0 +1,161 @@
+table DimHRZone
+	lineageTag: 4792030e-c598-4238-b49d-28fedaf71787
+
+	column hr_zone_key
+		dataType: int64
+		isKey
+		formatString: 0
+		lineageTag: 751c8d84-8d13-4150-b01c-55f7306437a9
+		summarizeBy: none
+		sourceColumn: hr_zone_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column hr_zone
+		dataType: string
+		lineageTag: db46a636-5fcb-44ee-a53a-95f6f1a00474
+		summarizeBy: none
+		sourceColumn: hr_zone
+		sortByColumn: intensity_level
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column zone_label
+		dataType: string
+		lineageTag: 18901d67-aced-4e8c-ba81-a9e4e162523b
+		summarizeBy: none
+		sourceColumn: zone_label
+		sortByColumn: intensity_level
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column intensity_level
+		dataType: int64
+		formatString: 0
+		lineageTag: e4211126-0211-46fa-9646-0e7ae9bdf27d
+		summarizeBy: none
+		sourceColumn: intensity_level
+
+		annotation SummarizationSetBy = Automatic
+
+	column hr_pct_max_low
+		dataType: int64
+		formatString: 0
+		lineageTag: c9de15f8-1bca-4fb7-8237-c6483b621e2f
+		summarizeBy: none
+		sourceColumn: hr_pct_max_low
+
+		annotation SummarizationSetBy = Automatic
+
+	column hr_pct_max_high
+		dataType: int64
+		formatString: 0
+		lineageTag: cfebbe64-b2f5-4386-8706-863b77d398af
+		summarizeBy: none
+		sourceColumn: hr_pct_max_high
+
+		annotation SummarizationSetBy = Automatic
+
+	column hr_pct_max_range
+		dataType: string
+		lineageTag: f908c820-2a10-4c29-a78a-2174fceac480
+		summarizeBy: none
+		sourceColumn: hr_pct_max_range
+
+		annotation SummarizationSetBy = Automatic
+
+	column zone_color
+		dataType: string
+		lineageTag: 078dc3c0-363a-4aa8-8b3b-80acb0fec0ea
+		summarizeBy: none
+		sourceColumn: zone_color
+
+		annotation SummarizationSetBy = Automatic
+
+	column description
+		dataType: string
+		lineageTag: 4a4faf25-d600-402e-8457-840957687945
+		summarizeBy: none
+		sourceColumn: description
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimHRZone = m
+		mode: import
+		source =
+				let
+				    // ── 1. Define the zone registry as a hardcoded table ──────────────────────
+				    //    This is intentionally NOT derived from the fact table.
+				    //    HR zones are a physiological standard, not something inferred
+				    //    from data — they should be stable regardless of what activities
+				    //    exist in the fact table at any given refresh.
+				    ZoneData          = {
+				        // { hr_zone_key, hr_zone, zone_label, intensity_level,
+				        //   hr_pct_max_low, hr_pct_max_high, description }
+				        {0, "No Data",  "No HR Data",        0,  null, null, "Activity recorded without a heart rate monitor"},
+				        {1, "Zone 1",   "Active Recovery",   1,  50,   60,   "Very light effort – recovery and warm-up"},
+				        {2, "Zone 2",   "Aerobic Base",      2,  60,   70,   "Comfortable aerobic effort – fat burning, base building"},
+				        {3, "Zone 3",   "Aerobic Endurance", 3,  70,   80,   "Moderate effort – improves aerobic capacity"},
+				        {4, "Zone 4",   "Lactate Threshold", 4,  80,   90,   "Hard effort – improves speed and threshold power"},
+				        {5, "Zone 5",   "VO2 Max",           5,  90,   100,  "Maximum effort – develops peak aerobic power"}
+				    },
+				
+				    // ── 2. Convert to table ────────────────────────────────────────────────────
+				    AsTable           = Table.FromRows(ZoneData, {
+				                            "hr_zone_key", "hr_zone", "zone_label",
+				                            "intensity_level",
+				                            "hr_pct_max_low", "hr_pct_max_high",
+				                            "description"
+				                        }),
+				
+				    // ── 3. Enforce types ───────────────────────────────────────────────────────
+				    Typed             = Table.TransformColumnTypes(AsTable, {
+				                            {"hr_zone_key",      Int64.Type},
+				                            {"hr_zone",          type text},
+				                            {"zone_label",       type text},
+				                            {"intensity_level",  Int64.Type},
+				                            {"hr_pct_max_low",   Int64.Type},
+				                            {"hr_pct_max_high",  Int64.Type},
+				                            {"description",      type text}
+				                        }),
+				
+				    // ── 4. Derived: display range string ──────────────────────────────────────
+				    WithRange         = Table.AddColumn(Typed, "hr_pct_max_range",
+				                            each
+				                                if [hr_pct_max_low] = null then "—"
+				                                else Text.From([hr_pct_max_low]) & "–"
+				                                   & Text.From([hr_pct_max_high]) & "% max HR",
+				                            type text),
+				
+				    // ── 5. Derived: colour hint for conditional formatting in visuals ──────────
+				    WithColor         = Table.AddColumn(WithRange, "zone_color",
+				                            each
+				                                if   [hr_zone_key] = 0 then "#AAAAAA"
+				                                else if [hr_zone_key] = 1 then "#5B9BD5"
+				                                else if [hr_zone_key] = 2 then "#70AD47"
+				                                else if [hr_zone_key] = 3 then "#FFC000"
+				                                else if [hr_zone_key] = 4 then "#FF6600"
+				                                else                           "#C00000",
+				                            type text),
+				
+				    // ── 6. Final column order ──────────────────────────────────────────────────
+				    Reordered         = Table.ReorderColumns(WithColor, {
+				                            "hr_zone_key",
+				                            "hr_zone",
+				                            "zone_label",
+				                            "intensity_level",
+				                            "hr_pct_max_low", "hr_pct_max_high", "hr_pct_max_range",
+				                            "zone_color",
+				                            "description"
+				                        })
+				in
+				    Reordered
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

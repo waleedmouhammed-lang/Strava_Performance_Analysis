@@ -1,0 +1,109 @@
+table DimAthlete
+	lineageTag: ff022fb9-fc30-4b4b-86fc-441c693e1997
+
+	column athlete_key
+		dataType: int64
+		isKey
+		formatString: 0
+		lineageTag: c8afb262-cf6d-4ef6-9833-2745289301a2
+		summarizeBy: none
+		sourceColumn: athlete_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column athlete_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 071b8e9d-ed32-4cbe-a1ae-53ce4768c3f1
+		summarizeBy: none
+		sourceColumn: athlete_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column athlete_name
+		dataType: string
+		lineageTag: 9ea9dc6b-75cb-4f5a-bd3e-e10b402a3dd0
+		summarizeBy: none
+		sourceColumn: athlete_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column gender
+		dataType: string
+		lineageTag: 00b16e4a-90c6-433c-9e71-0f7a0faffea2
+		summarizeBy: none
+		sourceColumn: gender
+
+		annotation SummarizationSetBy = Automatic
+
+	column city
+		dataType: string
+		lineageTag: db50966a-b13b-455e-b1da-fa16eadb5701
+		summarizeBy: none
+		sourceColumn: city
+
+		annotation SummarizationSetBy = Automatic
+
+	column country
+		dataType: string
+		lineageTag: dc2d240e-48a3-4b7d-8dad-ea30cbe95c24
+		summarizeBy: none
+		sourceColumn: country
+
+		annotation SummarizationSetBy = Automatic
+
+	column weight_kg
+		dataType: double
+		lineageTag: 59fa467e-a370-40a1-9b87-61b5ee8701b5
+		summarizeBy: none
+		sourceColumn: weight_kg
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column ftp
+		dataType: int64
+		formatString: 0
+		lineageTag: 8fcd1eaa-15e9-4e6d-9c6f-e62cdc724bc8
+		summarizeBy: none
+		sourceColumn: ftp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimAthlete = m
+		mode: import
+		source = ```
+				let
+				    // ── 1. Pull distinct athlete IDs from the fact table ───────────────────────
+				    FactTable      = #"Strava Activities",
+				    DistinctIDs    = List.Distinct(FactTable[athlete_id]),
+				    IDTable        = Table.FromList(DistinctIDs, Splitter.SplitByNothing(), {"athlete_id"}, null, ExtraValues.Error),
+				    TypedIDs       = Table.TransformColumnTypes(IDTable, {{"athlete_id", Int64.Type}}),
+				
+				    // ── 2. Surrogate key ───────────────────────────────────────────────────────
+				    WithKey        = Table.AddIndexColumn(TypedIDs, "athlete_key", 1, 1, Int64.Type),
+				
+				    // ── 3. Extensible attribute columns (stubbed — fill in manually or via API) 
+				    WithName       = Table.AddColumn(WithKey, "athlete_name", each null, type text),
+				    WithGender     = Table.AddColumn(WithName, "gender", each null, type text),
+				    WithCity       = Table.AddColumn(WithGender, "city", each null, type text),
+				    WithCountry    = Table.AddColumn(WithCity, "country", each null, type text),
+				    WithWeightKg   = Table.AddColumn(WithCountry, "weight_kg", each null, type number),
+				    WithFTP        = Table.AddColumn(WithWeightKg, "ftp", each null, Int64.Type),
+				
+				    // ── 4. Final column order ──────────────────────────────────────────────────
+				    Reordered      = Table.ReorderColumns(WithFTP, {
+				                         "athlete_key", "athlete_id",
+				                         "athlete_name", "gender",
+				                         "city", "country",
+				                         "weight_kg", "ftp"
+				                     })
+				in
+				    Reordered
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

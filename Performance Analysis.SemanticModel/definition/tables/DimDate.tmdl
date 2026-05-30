@@ -1,0 +1,263 @@
+/// Dynamic date dimension. Range = first day of month containing (FactMin - 10% buffer) through last day of month containing (FactMax + 10% buffer). Automatically extends as new activities are added.
+table DimDate
+	lineageTag: e9fa20d3-0e3f-4943-9fea-d15ff97c978f
+	dataCategory: Time
+
+	column DateKey
+		dataType: int64
+		formatString: 0
+		lineageTag: 23c021ed-a5a8-4a1b-baa1-8656d50e9ebe
+		summarizeBy: none
+		sourceColumn: DateKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		isKey
+		formatString: Long Date
+		lineageTag: eb8f5f1b-8447-47e2-a718-b64bde721d05
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: 01281357-f6fd-432c-9a1e-13281831d9c0
+		summarizeBy: sum
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+	column QuarterNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: e866edcc-0672-4624-860b-16f15a5ffb36
+		summarizeBy: sum
+		sourceColumn: QuarterNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quarter
+		dataType: string
+		lineageTag: d50f7572-27c4-4d82-99af-5d7cc97b3e5c
+		summarizeBy: none
+		sourceColumn: Quarter
+		sortByColumn: QuarterNumber
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: cf374d0e-3a49-453b-a755-2beabc1e71dc
+		summarizeBy: sum
+		sourceColumn: MonthNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthName
+		dataType: string
+		lineageTag: b834bd1d-9798-4b86-bffc-fb048c3d2a90
+		summarizeBy: none
+		sourceColumn: MonthName
+		sortByColumn: MonthNumber
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthShort
+		dataType: string
+		lineageTag: 4c245f41-9f47-42f8-918a-e990a4d81b86
+		summarizeBy: none
+		sourceColumn: MonthShort
+		sortByColumn: MonthNumber
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column YearMonth
+		dataType: string
+		lineageTag: f278458b-2da0-4fc8-a711-e8d365f502be
+		summarizeBy: none
+		sourceColumn: YearMonth
+
+		annotation SummarizationSetBy = Automatic
+
+	column WeekOfYear
+		dataType: int64
+		formatString: 0
+		lineageTag: 7be3b2fa-9413-4ec7-888d-fb54ef583d01
+		summarizeBy: sum
+		sourceColumn: WeekOfYear
+
+		annotation SummarizationSetBy = Automatic
+
+	column YearWeek
+		dataType: string
+		lineageTag: 58cf6f1c-99d9-41df-b6f9-75621aaf6e8b
+		summarizeBy: none
+		sourceColumn: YearWeek
+
+		annotation SummarizationSetBy = Automatic
+
+	column DayOfMonth
+		dataType: int64
+		formatString: 0
+		lineageTag: 3b5dd2e3-1802-44ea-a1e8-085f2e8f2b43
+		summarizeBy: sum
+		sourceColumn: DayOfMonth
+
+		annotation SummarizationSetBy = Automatic
+
+	column DayOfWeekNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: 0cd23596-127c-4f72-9590-9e2f33d79682
+		summarizeBy: sum
+		sourceColumn: DayOfWeekNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column DayName
+		dataType: string
+		lineageTag: 5957750e-c983-40f5-8b38-750a6f492a28
+		summarizeBy: none
+		sourceColumn: DayName
+		sortByColumn: DayOfWeekNumber
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column DayShort
+		dataType: string
+		lineageTag: 06599dd0-0a93-4ebf-af71-e9e8a6d0e20b
+		summarizeBy: none
+		sourceColumn: DayShort
+		sortByColumn: DayOfWeekNumber
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsWeekend
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: beca0a78-3cf6-4f8c-8a21-2a948afac478
+		summarizeBy: none
+		sourceColumn: IsWeekend
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsInFactRange
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: ce9f750e-2616-4e08-8d0a-4028bd1fa98a
+		summarizeBy: none
+		sourceColumn: IsInFactRange
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimDate = m
+		mode: import
+		source =
+				let
+				    // ── 1. Pull anchor dates directly from the fact table ──────────────────────
+				    FactTable     = #"Strava Activities",
+				    RawMin        = List.Min(FactTable[date]),
+				    RawMax        = List.Max(FactTable[date]),
+				
+				    // ── 2. 10% buffer on both ends (in whole days, rounded up) ────────────────
+				    SpanDays      = Duration.Days(RawMax - RawMin),
+				    BufferDays    = Number.RoundUp(SpanDays * 0.10),
+				
+				    // ── 3. Snap to full-month boundaries ──────────────────────────────────────
+				    //    Start → 1st day of the month containing (RawMin − buffer)
+				    //    End   → last day of the month containing (RawMax + buffer)
+				    StartDate     = Date.StartOfMonth(Date.AddDays(RawMin, -BufferDays)),
+				    EndDate       = Date.EndOfMonth(Date.AddDays(RawMax, BufferDays)),
+				
+				    // ── 4. Generate the full contiguous date list ──────────────────────────────
+				    TotalDays     = Duration.Days(EndDate - StartDate) + 1,
+				    DateList      = List.Dates(StartDate, TotalDays, #duration(1, 0, 0, 0)),
+				    DateTable     = Table.FromList(DateList, Splitter.SplitByNothing(), {"Date"}, null, ExtraValues.Error),
+				    TypedDate     = Table.TransformColumnTypes(DateTable, {{"Date", type date}}),
+				
+				    // ── 5. Surrogate key: integer YYYYMMDD ─────────────────────────────────────
+				    WithKey       = Table.AddColumn(TypedDate, "DateKey",
+				                        each Date.Year([Date]) * 10000
+				                           + Date.Month([Date]) * 100
+				                           + Date.Day([Date]),
+				                        Int64.Type),
+				
+				    // ── 6. Year & Quarter ──────────────────────────────────────────────────────
+				    WithYear      = Table.AddColumn(WithKey, "Year",
+				                        each Date.Year([Date]), Int64.Type),
+				    WithQtrNum    = Table.AddColumn(WithYear, "QuarterNumber",
+				                        each Date.QuarterOfYear([Date]), Int64.Type),
+				    WithQtr       = Table.AddColumn(WithQtrNum, "Quarter",
+				                        each "Q" & Text.From(Date.QuarterOfYear([Date])), type text),
+				
+				    // ── 7. Month ───────────────────────────────────────────────────────────────
+				    WithMonthNum  = Table.AddColumn(WithQtr, "MonthNumber",
+				                        each Date.Month([Date]), Int64.Type),
+				    WithMonthName = Table.AddColumn(WithMonthNum, "MonthName",
+				                        each Date.MonthName([Date]), type text),
+				    WithMonthShort = Table.AddColumn(WithMonthName, "MonthShort",
+				                        each Text.Start(Date.MonthName([Date]), 3), type text),
+				    WithYearMonth = Table.AddColumn(WithMonthShort, "YearMonth",
+				                        each Text.From(Date.Year([Date])) & "-"
+				                           & Text.PadStart(Text.From(Date.Month([Date])), 2, "0"),
+				                        type text),
+				
+				    // ── 8. Week ────────────────────────────────────────────────────────────────
+				    WithWeekNum   = Table.AddColumn(WithYearMonth, "WeekOfYear",
+				                        each Date.WeekOfYear([Date]), Int64.Type),
+				    WithYearWeek  = Table.AddColumn(WithWeekNum, "YearWeek",
+				                        each Text.From(Date.Year([Date])) & "-W"
+				                           & Text.PadStart(Text.From(Date.WeekOfYear([Date])), 2, "0"),
+				                        type text),
+				
+				    // ── 9. Day ─────────────────────────────────────────────────────────────────
+				    WithDayOfMonth = Table.AddColumn(WithYearWeek, "DayOfMonth",
+				                        each Date.Day([Date]), Int64.Type),
+				    // DayOfWeekNumber follows ISO 8601: Monday = 1 … Sunday = 7
+				    WithDOWNum    = Table.AddColumn(WithDayOfMonth, "DayOfWeekNumber",
+				                        each Date.DayOfWeek([Date], Day.Monday) + 1, Int64.Type),
+				    WithDayName   = Table.AddColumn(WithDOWNum, "DayName",
+				                        each Date.DayOfWeekName([Date]), type text),
+				    WithDayShort  = Table.AddColumn(WithDayName, "DayShort",
+				                        each Text.Start(Date.DayOfWeekName([Date]), 3), type text),
+				    WithIsWeekend = Table.AddColumn(WithDayShort, "IsWeekend",
+				                        each Date.DayOfWeek([Date], Day.Monday) >= 5, type logical),
+				
+				    // ── 10. Flag: is this date within the actual fact range? ───────────────────
+				    WithInFact    = Table.AddColumn(WithIsWeekend, "IsInFactRange",
+				                        each [Date] >= RawMin and [Date] <= RawMax, type logical),
+				
+				    // ── 11. Final column order ─────────────────────────────────────────────────
+				    Reordered     = Table.ReorderColumns(WithInFact, {
+				                        "DateKey", "Date",
+				                        "Year",
+				                        "QuarterNumber", "Quarter",
+				                        "MonthNumber", "MonthName", "MonthShort", "YearMonth",
+				                        "WeekOfYear", "YearWeek",
+				                        "DayOfMonth", "DayOfWeekNumber", "DayName", "DayShort",
+				                        "IsWeekend", "IsInFactRange"
+				                    })
+				in
+				    Reordered
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

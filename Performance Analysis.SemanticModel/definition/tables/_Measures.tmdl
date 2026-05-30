@@ -1,0 +1,688 @@
+table _Measures
+	lineageTag: 61cae5f7-e73f-4e07-8ed1-06fa52ee1eae
+
+	/// Total number of activity sessions in the current filter context.
+	measure '# Activities' = COUNTROWS( FactActivities )
+		formatString: #,0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 7a3e832f-a949-4645-8890-a0b3472cb15e
+
+	/// Sessions where is_outdoor = TRUE.
+	measure '# Outdoor Activities' =
+			CALCULATE(
+			    COUNTROWS( FactActivities ),
+			    DimActivityType[is_outdoor] = TRUE()
+			)
+		formatString: #,0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 61aae558-c1e8-43d9-8ca2-e6afbd45d976
+
+	/// Sessions categorised as HIIT.
+	measure '# HIIT Sessions' =
+			CALCULATE(
+			    COUNTROWS( FactActivities ),
+			    DimActivityType[activity_category] = "HIIT"
+			)
+		formatString: #,0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 450b703e-3219-46f5-a3fd-b2fc126b9106
+
+	/// Sum of distance_km across all sessions in context.
+	measure 'Total Distance (km)' = SUM( FactActivities[distance_km] )
+		formatString: #,0.0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 46c3fbc3-c142-4432-bf67-8662203e037d
+
+	/// Total moving time in minutes.
+	measure 'Total Moving Time (min)' = SUM( FactActivities[moving_time_min] )
+		formatString: #,0.0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 8b4e2ba7-7b3a-479c-8f45-9de372dc978b
+
+	/// Total moving time converted to hours.
+	measure 'Total Moving Time (hrs)' = DIVIDE( [Total Moving Time (min)], 60 )
+		formatString: #,0.0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 41ecea0b-734b-4459-a537-8b9da23615b4
+
+	/// Total elevation gain in metres.
+	measure 'Total Elevation Gain (m)' = SUM( FactActivities[total_elevation_gain] )
+		formatString: #,0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 99eead87-359b-4afb-877a-9ef636379f79
+
+	/// Average distance per session.
+	measure 'Avg Distance (km)' = AVERAGE( FactActivities[distance_km] )
+		formatString: #,0.0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: e0c3f1ed-70a4-4924-9b10-1fc64e91a2a9
+
+	/// Average moving time per session in minutes.
+	measure 'Avg Moving Time (min)' = AVERAGE( FactActivities[moving_time_min] )
+		formatString: #,0.0
+		displayFolder: P2 · Activity Detail
+		lineageTag: 88a634df-491a-48c7-ae63-bebd246ea2aa
+
+	/// Average elevation gain per session.
+	measure 'Avg Elevation Gain (m)' = AVERAGE( FactActivities[total_elevation_gain] )
+		formatString: #,0.0
+		displayFolder: P2 · Activity Detail
+		lineageTag: e5821e50-fc18-4bef-a071-ce376ebc012b
+
+	/// Average heart rate excluding sessions with no HR monitor.
+	measure 'Avg Heart Rate' =
+			AVERAGEX(
+			    FILTER( FactActivities, NOT ISBLANK( FactActivities[average_heartrate] ) ),
+			    FactActivities[average_heartrate]
+			)
+		formatString: #,0.0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 32ffd847-73be-42d6-b6ec-f43621bca298
+
+	/// Peak heart rate recorded across sessions in context.
+	measure 'Max Heart Rate' = MAX( FactActivities[max_heartrate] )
+		formatString: #,0
+		displayFolder: P2 · Activity Detail
+		lineageTag: dc4d3a6f-beee-48e9-a5b5-c777f723e02d
+
+	/// Average pace in decimal min/km. Excludes HIIT (blank pace). Use for scatter axes.
+	measure 'Avg Pace (min/km)' =
+			AVERAGEX(
+			    FILTER( FactActivities, NOT ISBLANK( FactActivities[pace_min_per_km] ) ),
+			    FactActivities[pace_min_per_km]
+			)
+		formatString: #,0.00
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 2528cbee-8716-4690-88b0-71d96d9ff5d1
+
+	/// Average cadence in steps per minute, excluding sessions with no cadence data.
+	measure 'Avg Cadence (spm)' =
+			AVERAGEX(
+			    FILTER( FactActivities, NOT ISBLANK( FactActivities[average_cadence] ) ),
+			    FactActivities[average_cadence]
+			)
+		formatString: #,0.0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: b8e058f2-b67d-4b85-9ca0-8033ce0f0468
+
+	/// Average suffer score excluding sessions with no HR data.
+	measure 'Avg Suffer Score' =
+			AVERAGEX(
+			    FILTER( FactActivities, NOT ISBLANK( FactActivities[suffer_score] ) ),
+			    FactActivities[suffer_score]
+			)
+		formatString: #,0.0
+		displayFolder: P2 · Activity Detail
+		lineageTag: e197303d-c29d-4dbf-bed1-333f2160f119
+
+	/// Sum of suffer score for weekly and monthly aggregation.
+	measure 'Total Suffer Score' =
+			SUMX(
+			    FILTER( FactActivities, NOT ISBLANK( FactActivities[suffer_score] ) ),
+			    FactActivities[suffer_score]
+			)
+		formatString: #,0
+		displayFolder: P2 · Activity Detail
+		lineageTag: 8ef0d027-34d7-4ae7-91f6-baf959d0ac7c
+
+	/// Fastest pace recorded, filtered to sessions over 3 km to exclude short warm-up outliers.
+	measure 'Best Pace (min/km)' =
+			MINX(
+			    FILTER(
+			        FactActivities,
+			        NOT ISBLANK( FactActivities[pace_min_per_km] )
+			            && FactActivities[distance_km] > 3
+			    ),
+			    FactActivities[pace_min_per_km]
+			)
+		formatString: #,0.00
+		displayFolder: P2 · Activity Detail
+		lineageTag: b916f130-8b2d-4929-b29e-c1956c2a4057
+
+	/// Formats Best Pace as a readable mm:ss /km string for card visuals.
+	measure 'Best Pace Label' =
+			VAR BestMin = [Best Pace (min/km)]
+			VAR Mins    = INT( BestMin )
+			VAR Secs    = ROUND( ( BestMin - Mins ) * 60, 0 )
+			RETURN
+			    IF(
+			        ISBLANK( BestMin ),
+			        "—",
+			        Mins & ":" & FORMAT( Secs, "00" ) & " /km"
+			    )
+		displayFolder: P2 · Activity Detail
+		lineageTag: f311c849-efa5-4500-ab09-b2ded7eab9f8
+
+	/// Maximum single-session distance in the current context.
+	measure 'Longest Distance (km)' = MAX( FactActivities[distance_km] )
+		formatString: #,0.0
+		displayFolder: P2 · Activity Detail
+		lineageTag: 8f19525e-254b-4e11-81dd-318de11217e5
+
+	/// Highest average cadence recorded across sessions in context.
+	measure 'Max Cadence (spm)' =
+			MAXX(
+			    FILTER( FactActivities, NOT ISBLANK( FactActivities[average_cadence] ) ),
+			    FactActivities[average_cadence]
+			)
+		formatString: #,0.0
+		displayFolder: P2 · Activity Detail
+		lineageTag: e85a874a-dade-4a14-bcfa-349f02547ea6
+
+	/// Highest suffer score recorded across sessions in context.
+	measure 'Max Suffer Score' =
+			MAXX(
+			    FILTER( FactActivities, NOT ISBLANK( FactActivities[suffer_score] ) ),
+			    FactActivities[suffer_score]
+			)
+		formatString: #,0
+		displayFolder: P2 · Activity Detail
+		lineageTag: fe983140-d597-4a40-8ec8-e40f8c042ad5
+
+	/// Running total of distance from the first date to the current date in context. Works with date slicer.
+	measure 'Cumulative Distance (km)' =
+			CALCULATE(
+			    [Total Distance (km)],
+			    FILTER(
+			        ALL( DimDate ),
+			        DimDate[Date] <= MAX( DimDate[Date] )
+			            && DimDate[IsInFactRange] = TRUE()
+			    )
+			)
+		formatString: #,0.0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 8ac4416a-0224-4f1c-8433-ec22fd9137a2
+
+	/// Running total of moving time in hours up to the current date.
+	measure 'Cumulative Moving Time (hrs)' =
+			CALCULATE(
+			    [Total Moving Time (hrs)],
+			    FILTER(
+			        ALL( DimDate ),
+			        DimDate[Date] <= MAX( DimDate[Date] )
+			    )
+			)
+		formatString: #,0.0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: d53e9a43-44e6-46f5-8191-d54dc5c283ca
+
+	/// Remaining kilometres to reach the 300 km milestone.
+	measure 'Distance to 300km Target' = 300 - CALCULATE( [Total Distance (km)], ALL( DimDate ) )
+		formatString: #,0.0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 3192f0e7-b218-4262-a94a-7f03136688b5
+
+	/// Constant 300 km reference line for the cumulative distance area chart.
+	measure 'Target Distance 300km' = 300
+		formatString: #,0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 2a06e3a0-26a0-4fe6-b85b-961b34b740bd
+
+	/// Activity count per HR zone when DimHRZone[zone_label] is on rows.
+	measure '# Activities in Zone' = CALCULATE( COUNTROWS( FactActivities ) )
+		formatString: #,0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 879bf569-475a-4ead-8934-b5147b9e1834
+
+	/// Percentage share of activities in the current zone vs all zones. Removes DimHRZone filter from denominator.
+	measure 'Zone % of Total' =
+			DIVIDE(
+			    CALCULATE( COUNTROWS( FactActivities ) ),
+			    CALCULATE( COUNTROWS( FactActivities ), ALL( DimHRZone ) )
+			)
+		formatString: 0.0%
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: f17ae995-1308-417f-aac8-d3790bc04e66
+
+	/// Explicit Zone 2 share for the KPI card. Always reads Zone 2 regardless of slicer selection.
+	measure 'Zone 2 %' =
+			DIVIDE(
+			    CALCULATE( COUNTROWS( FactActivities ), DimHRZone[hr_zone] = "Zone 2" ),
+			    CALCULATE( COUNTROWS( FactActivities ), ALL( DimHRZone ) )
+			)
+		formatString: 0.0%
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 3d87e68b-734d-4351-b223-76380fedc713
+
+	/// Total distance covered within each HR zone.
+	measure 'Zone Distance (km)' = CALCULATE( SUM( FactActivities[distance_km] ) )
+		formatString: #,0.0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: ba3aad52-68e4-44a7-84ae-39bf405a2961
+
+	/// Previous week's total distance using WeekOfYear as ordinal offset.
+	measure 'Prev Week Distance (km)' =
+			VAR CurrentWeek = SELECTEDVALUE( DimDate[WeekOfYear] )
+			RETURN
+			    CALCULATE(
+			        [Total Distance (km)],
+			        ALL( DimDate ),
+			        DimDate[WeekOfYear] = CurrentWeek - 1
+			    )
+		formatString: #,0.0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 92e32141-bada-482e-8fd6-fe85ca112a12
+
+	/// Week-over-week change in total distance.
+	measure 'WoW Distance Δ (km)' = [Total Distance (km)] - [Prev Week Distance (km)]
+		formatString: #,0.0
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 1c8a2418-655e-4679-8800-27da47c833e9
+
+	/// Week-over-week distance change as a percentage. Used for conditional formatting on bar chart.
+	measure 'WoW Distance Δ %' =
+			DIVIDE(
+			    [WoW Distance Δ (km)],
+			    [Prev Week Distance (km)]
+			)
+		formatString: 0.0%
+		displayFolder: P1 · Bird's Eye View
+		lineageTag: 27820fea-a0c9-4c85-b49e-150cc46648e2
+
+	/// Previous week's average pace for delta calculation.
+	measure 'Prev Week Avg Pace' =
+			VAR CurrentWeek = SELECTEDVALUE( DimDate[WeekOfYear] )
+			RETURN
+			    CALCULATE(
+			        [Avg Pace (min/km)],
+			        ALL( DimDate ),
+			        DimDate[WeekOfYear] = CurrentWeek - 1
+			    )
+		formatString: #,0.00
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: ef5c11b1-8811-436a-8d9d-46ce2ce303f1
+
+	/// Week-over-week pace delta. Negative = improvement (faster). Apply inverted colour rule: negative = green.
+	measure 'WoW Pace Δ (min/km)' = [Avg Pace (min/km)] - [Prev Week Avg Pace]
+		formatString: #,0.00
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: cd3c60b5-2a74-43e1-9741-30518835f73a
+
+	/// Previous week's average cadence.
+	measure 'Prev Week Avg Cadence' =
+			VAR CurrentWeek = SELECTEDVALUE( DimDate[WeekOfYear] )
+			RETURN
+			    CALCULATE(
+			        [Avg Cadence (spm)],
+			        ALL( DimDate ),
+			        DimDate[WeekOfYear] = CurrentWeek - 1
+			    )
+		formatString: #,0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: d4240005-99f7-4397-8416-b9d012f86b62
+
+	/// Week-over-week cadence delta. Positive = improvement.
+	measure 'WoW Cadence Δ (spm)' = [Avg Cadence (spm)] - [Prev Week Avg Cadence]
+		formatString: #,0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 2856ddfc-00a6-4940-80da-3504dd7dd92c
+
+	/// Previous month total distance using DATEADD for MoM comparison.
+	measure 'Prev Month Distance (km)' =
+			CALCULATE(
+			    [Total Distance (km)],
+			    DATEADD( DimDate[Date], -1, MONTH )
+			)
+		formatString: #,0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 4802b659-69ad-45fe-b51c-90df3ed96dff
+
+	/// Month-over-month distance change as percentage.
+	measure 'MoM Distance Δ %' =
+			DIVIDE(
+			    [Total Distance (km)] - [Prev Month Distance (km)],
+			    [Prev Month Distance (km)]
+			)
+		formatString: 0.0%
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 57a50438-b03f-439d-8a51-074447cedffe
+
+	/// Previous month average heart rate.
+	measure 'Prev Month Avg HR' =
+			CALCULATE(
+			    [Avg Heart Rate],
+			    DATEADD( DimDate[Date], -1, MONTH )
+			)
+		formatString: #,0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 2c7b1726-a686-462e-a4c5-54d0a6f8b69b
+
+	/// Month-over-month HR delta in bpm. Negative = lower avg HR = cardiac improvement. Apply inverted colour rule: negative = green.
+	measure 'MoM HR Δ (bpm)' = [Avg Heart Rate] - [Prev Month Avg HR]
+		formatString: +#,0.0;-#,0.0;0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 70c8ef64-6217-421d-a341-4c957325559b
+
+	/// Cardiac Efficiency Index = (avg_heartrate x moving_time_min) / distance_km. Lower = more efficient heart. Only calculated for sessions with HR data and distance > 0.
+	measure 'Cardiac Efficiency Index' =
+			VAR HRSessions =
+			    FILTER(
+			        FactActivities,
+			        NOT ISBLANK( FactActivities[average_heartrate] )
+			            && FactActivities[distance_km] > 0
+			    )
+			RETURN
+			    DIVIDE(
+			        SUMX( HRSessions, FactActivities[average_heartrate] * FactActivities[moving_time_min] ),
+			        SUMX( HRSessions, FactActivities[distance_km] )
+			    )
+		formatString: #,0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 7167407c-65ee-4580-8c35-170b08f81c03
+
+	/// CEI baseline locked to Week 16 for delta calculations. Ignores all date filters.
+	measure 'CEI Baseline (W16)' =
+			CALCULATE(
+			    [Cardiac Efficiency Index],
+			    ALL( DimDate ),
+			    DimDate[WeekOfYear] = 16
+			)
+		formatString: #,0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 0573df8f-8f9e-4ccf-a213-c20f74bdd200
+
+	/// CEI improvement vs Week 16 baseline. Negative = improvement. Apply inverted colour rule: negative = green.
+	measure 'CEI Δ vs Baseline %' =
+			DIVIDE(
+			    [Cardiac Efficiency Index] - [CEI Baseline (W16)],
+			    [CEI Baseline (W16)]
+			)
+		formatString: 0.0%
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 03df0be2-03bc-416b-b370-ec5bfffefce4
+
+	/// 7-day rolling average of CEI to smooth day-to-day noise on the daily trend line.
+	measure 'CEI 7-Day Rolling Avg' =
+			CALCULATE(
+			    [Cardiac Efficiency Index],
+			    DATESINPERIOD( DimDate[Date], MAX( DimDate[Date] ), -7, DAY )
+			)
+		formatString: #,0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: ba0d4fab-89fc-49e1-a649-a4394b833160
+
+	/// 7-day rolling average heart rate. Smooths the HR trend line to reveal the adaptation signal.
+	measure 'Avg HR 7-Day Rolling' =
+			CALCULATE(
+			    [Avg Heart Rate],
+			    DATESINPERIOD( DimDate[Date], MAX( DimDate[Date] ), -7, DAY )
+			)
+		formatString: #,0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: bdb8ca3a-429a-44eb-9d61-12e81a61d1c2
+
+	/// 7-day rolling average pace.
+	measure 'Avg Pace 7-Day Rolling' =
+			CALCULATE(
+			    [Avg Pace (min/km)],
+			    DATESINPERIOD( DimDate[Date], MAX( DimDate[Date] ), -7, DAY )
+			)
+		formatString: #,0.00
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 51ee3da6-cfe9-4a3a-9927-5306fad21e86
+
+	/// 7-day rolling average cadence.
+	measure 'Avg Cadence 7-Day Rolling' =
+			CALCULATE(
+			    [Avg Cadence (spm)],
+			    DATESINPERIOD( DimDate[Date], MAX( DimDate[Date] ), -7, DAY )
+			)
+		formatString: #,0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 61d97480-62a6-4f06-9539-c443bdd032a3
+
+	/// Lower bound of the 57-58 spm cadence target band. Used as a constant reference line.
+	measure 'Cadence Target Low' = 57
+		formatString: #,0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 5114aee2-82ce-4a2b-93b9-f462b9e03354
+
+	/// Upper bound of the 57-58 spm cadence target band.
+	measure 'Cadence Target High' = 58
+		formatString: #,0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 8b9fcce2-e99f-45e6-99cf-71f4190af897
+
+	/// Percentage of outdoor sessions where avg cadence >= 57 spm (in target band).
+	measure 'Cadence in Target Band %' =
+			DIVIDE(
+			    CALCULATE(
+			        COUNTROWS( FactActivities ),
+			        FILTER(
+			            FactActivities,
+			            NOT ISBLANK( FactActivities[average_cadence] )
+			                && FactActivities[average_cadence] >= 57
+			        )
+			    ),
+			    CALCULATE(
+			        COUNTROWS( FactActivities ),
+			        NOT ISBLANK( FactActivities[average_cadence] )
+			    )
+			)
+		formatString: 0.0%
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 279e06e8-c9bf-44ac-9845-b67eb1b8c953
+
+	/// Net cadence improvement: cadence on the last active day minus cadence on the first active day.
+	measure 'Cadence Growth (spm)' =
+			VAR AllDays = ALLNOBLANKROW( DimDate[Date] )
+			VAR ActiveDays =
+			    CALCULATETABLE(
+			        VALUES( DimDate[Date] ),
+			        KEEPFILTERS( DimDate[IsInFactRange] = TRUE() )
+			    )
+			VAR FirstDay = MINX( ActiveDays, [Date] )
+			VAR LastDay  = MAXX( ActiveDays, [Date] )
+			VAR FirstCad =
+			    CALCULATE(
+			        [Avg Cadence (spm)],
+			        ALL( DimDate ),
+			        DimDate[Date] = FirstDay
+			    )
+			VAR LastCad =
+			    CALCULATE(
+			        [Avg Cadence (spm)],
+			        ALL( DimDate ),
+			        DimDate[Date] = LastDay
+			    )
+			RETURN
+			    LastCad - FirstCad
+		formatString: #,0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: ea141650-d4a1-43b9-9606-6f2150d40daa
+
+	/// Formats Avg Pace as mm:ss /km string for card visuals and table columns. Do NOT use on scatter axes — use Avg Pace (min/km) there.
+	measure 'Avg Pace Label' =
+			VAR PaceVal = [Avg Pace (min/km)]
+			VAR Mins    = INT( PaceVal )
+			VAR Secs    = ROUND( ( PaceVal - Mins ) * 60, 0 )
+			RETURN
+			    IF(
+			        ISBLANK( PaceVal ),
+			        "—",
+			        Mins & ":" & FORMAT( Secs, "00" ) & " /km"
+			    )
+		displayFolder: P2 · Activity Detail
+		lineageTag: f4f48417-aa0b-4381-83d1-33eeb05bfc2e
+
+	/// Formats WoW Pace delta as signed mm:ss string e.g. +0:19 or -0:09. Negative = improvement.
+	measure 'WoW Pace Δ Label' =
+			VAR Delta    = [WoW Pace Δ (min/km)]
+			VAR AbsDelta = ABS( Delta )
+			VAR Mins     = INT( AbsDelta )
+			VAR Secs     = ROUND( ( AbsDelta - Mins ) * 60, 0 )
+			VAR Sign     = IF( Delta < 0, "+", IF( Delta > 0, "−", "" ) )
+			RETURN
+			    IF(
+			        ISBLANK( Delta ),
+			        "—",
+			        Sign & Mins & ":" & FORMAT( Secs, "00" )
+			    )
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: e4dcab20-3046-454a-ac54-836b7555c819
+
+	/// Returns 1 for outdoor sessions, BLANK for HIIT. Use as a visual-level filter (= 1) on all outdoor-only charts.
+	measure 'Outdoor Only Flag' =
+			IF(
+			    MAXX( RELATEDTABLE( DimActivityType ), INT( DimActivityType[is_outdoor] ) ) = 1,
+			    1,
+			    BLANK()
+			)
+		formatString: #,0
+		displayFolder: P2 · Activity Detail
+		lineageTag: 0e2944cd-9030-4da9-a08c-d0c7f0e1a8aa
+
+	/// COPY — primary in P1. # of activity sessions.
+	measure 'P2_ # Activities' = COUNTROWS( FactActivities )
+		formatString: #,0
+		displayFolder: P2 · Activity Detail
+		lineageTag: 563274c1-2523-434b-b34a-adbf51e018b2
+
+	/// COPY — primary in P1. Total distance km.
+	measure 'P2_ Total Distance (km)' = SUM( FactActivities[distance_km] )
+		formatString: #,0.0
+		displayFolder: P2 · Activity Detail
+		lineageTag: 88957fc3-5856-4a63-b637-8bc6f23a63ad
+
+	/// COPY — primary in P1. Total moving time in hours.
+	measure 'P2_ Total Moving Time (hrs)' = DIVIDE( [Total Moving Time (min)], 60 )
+		formatString: #,0.0
+		displayFolder: P2 · Activity Detail
+		lineageTag: 1fc16c5c-ddfc-4efa-805f-f9b9c7beb5c4
+
+	/// COPY — primary in P1. Average heart rate.
+	measure 'P2_ Avg Heart Rate' =
+			AVERAGEX(
+			    FILTER( FactActivities, NOT ISBLANK( FactActivities[average_heartrate] ) ),
+			    FactActivities[average_heartrate]
+			)
+		formatString: #,0.0
+		displayFolder: P2 · Activity Detail
+		lineageTag: 3480d365-1fb6-4fa7-8d45-2598fa05354a
+
+	/// COPY — primary in P1. Average pace (decimal min/km). Use for scatter axes.
+	measure 'P2_ Avg Pace (min/km)' =
+			AVERAGEX(
+			    FILTER( FactActivities, NOT ISBLANK( FactActivities[pace_min_per_km] ) ),
+			    FactActivities[pace_min_per_km]
+			)
+		formatString: #,0.00
+		displayFolder: P2 · Activity Detail
+		lineageTag: 7a57cd1e-5b24-4854-ab0e-610d9ece6c1b
+
+	/// COPY — primary in P1. Average cadence (spm).
+	measure 'P2_ Avg Cadence (spm)' =
+			AVERAGEX(
+			    FILTER( FactActivities, NOT ISBLANK( FactActivities[average_cadence] ) ),
+			    FactActivities[average_cadence]
+			)
+		formatString: #,0.0
+		displayFolder: P2 · Activity Detail
+		lineageTag: ccb78034-a475-424d-aacb-9ad8b8210824
+
+	/// COPY — primary in P1. Average distance per session.
+	measure 'P2_ Avg Distance (km)' = AVERAGE( FactActivities[distance_km] )
+		formatString: #,0.0
+		displayFolder: P2 · Activity Detail
+		lineageTag: fd58d8f7-ab4f-448a-aa08-c019109c7ca0
+
+	/// COPY — primary in P1. Average heart rate.
+	measure 'P3_ Avg Heart Rate' =
+			AVERAGEX(
+			    FILTER( FactActivities, NOT ISBLANK( FactActivities[average_heartrate] ) ),
+			    FactActivities[average_heartrate]
+			)
+		formatString: #,0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 81b8beda-b1d0-4803-b641-b3db06a756ee
+
+	/// COPY — primary in P1. Average pace (decimal min/km).
+	measure 'P3_ Avg Pace (min/km)' =
+			AVERAGEX(
+			    FILTER( FactActivities, NOT ISBLANK( FactActivities[pace_min_per_km] ) ),
+			    FactActivities[pace_min_per_km]
+			)
+		formatString: #,0.00
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 8ae06083-038c-4bb3-8b1e-ea83afb338e3
+
+	/// COPY — primary in P1. Average cadence (spm).
+	measure 'P3_ Avg Cadence (spm)' =
+			AVERAGEX(
+			    FILTER( FactActivities, NOT ISBLANK( FactActivities[average_cadence] ) ),
+			    FactActivities[average_cadence]
+			)
+		formatString: #,0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 4e1d7059-9b81-4aaf-97e0-0270bde0e1b8
+
+	/// COPY — primary in P1. # of activity sessions.
+	measure 'P3_ # Activities' = COUNTROWS( FactActivities )
+		formatString: #,0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 08411ba5-2e50-4d86-aeb0-da5bee3fc892
+
+	/// COPY — primary in P1. Total distance km.
+	measure 'P3_ Total Distance (km)' = SUM( FactActivities[distance_km] )
+		formatString: #,0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: efaccdd5-1768-4685-a061-36be639887b1
+
+	/// COPY — primary in P2. Best pace filtered to sessions > 3 km.
+	measure 'P3_ Best Pace (min/km)' =
+			MINX(
+			    FILTER(
+			        FactActivities,
+			        NOT ISBLANK( FactActivities[pace_min_per_km] )
+			            && FactActivities[distance_km] > 3
+			    ),
+			    FactActivities[pace_min_per_km]
+			)
+		formatString: #,0.00
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 75119d25-0705-4bf7-b858-5ea919f2e24a
+
+	/// COPY — primary in P2. Formats Best Pace as mm:ss /km string.
+	measure 'P3_ Best Pace Label' =
+			VAR BestMin = [Best Pace (min/km)]
+			VAR Mins    = INT( BestMin )
+			VAR Secs    = ROUND( ( BestMin - Mins ) * 60, 0 )
+			RETURN
+			    IF( ISBLANK( BestMin ), "—", Mins & ":" & FORMAT( Secs, "00" ) & " /km" )
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: b6666010-f06b-4766-aeba-345981b3c483
+
+	/// COPY — primary in P2. Formats Avg Pace as mm:ss /km for weekly summary matrix.
+	measure 'P3_ Avg Pace Label' =
+			VAR PaceVal = [Avg Pace (min/km)]
+			VAR Mins    = INT( PaceVal )
+			VAR Secs    = ROUND( ( PaceVal - Mins ) * 60, 0 )
+			RETURN
+			    IF( ISBLANK( PaceVal ), "—", Mins & ":" & FORMAT( Secs, "00" ) & " /km" )
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 4dfeb617-7d64-4b5d-b276-e3e72ce1af20
+
+	/// COPY — primary in P1. WoW distance delta. Used in weekly summary matrix.
+	measure 'P3_ WoW Distance Delta (km)' = [Total Distance (km)] - [Prev Week Distance (km)]
+		formatString: #,0.0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: c05f3dbe-eab2-4bc3-9f76-815ac26c9bdf
+
+	/// COPY — primary in P2. Max heart rate recorded.
+	measure 'P3_ Max Heart Rate' = MAX( FactActivities[max_heartrate] )
+		formatString: #,0
+		displayFolder: P3 · Cardiovascular Progress
+		lineageTag: 639fa126-5dd2-41f4-9227-dda084f5aaa5
+
+	partition _Measures = m
+		mode: import
+		source =
+				let
+				    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i44FAA==", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [Column1 = _t]),
+				    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Column1", type text}}),
+				    #"Removed Columns" = Table.RemoveColumns(#"Changed Type",{"Column1"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_ResultType = Table
+

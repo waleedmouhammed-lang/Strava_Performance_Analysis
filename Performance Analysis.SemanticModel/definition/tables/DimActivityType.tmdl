@@ -1,0 +1,111 @@
+table DimActivityType
+	lineageTag: 15692098-66b6-4682-9191-000109a9b3b3
+
+	column activity_type_key
+		dataType: int64
+		isKey
+		formatString: 0
+		lineageTag: aebc02ac-32a2-457b-80bd-21edacaad2f5
+		summarizeBy: none
+		sourceColumn: activity_type_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column name
+		dataType: string
+		lineageTag: aaf5ce70-0e56-4fdf-9cc8-3189eb10e318
+		summarizeBy: none
+		sourceColumn: name
+
+		annotation SummarizationSetBy = Automatic
+
+	column activity_category
+		dataType: string
+		lineageTag: a7783fb9-0ce0-451f-98c5-5c88aea0cb6f
+		summarizeBy: none
+		sourceColumn: activity_category
+
+		annotation SummarizationSetBy = Automatic
+
+	column sport_type
+		dataType: string
+		lineageTag: c0a16f13-54aa-4880-92d5-d3287ba702a5
+		summarizeBy: none
+		sourceColumn: sport_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_outdoor
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 887b7219-bb87-4a19-86ce-7c11ef7b1f1e
+		summarizeBy: none
+		sourceColumn: is_outdoor
+
+		annotation SummarizationSetBy = Automatic
+
+	column has_route
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 8c382c00-3ad6-47d4-8acd-a7daca174fdb
+		summarizeBy: none
+		sourceColumn: has_route
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimActivityType = m
+		mode: import
+		source =
+				let
+				    // ── 1. Pull the three stable classifiers from the fact table ───────────────
+				    FactTable        = #"Strava Activities",
+				    Selected         = Table.SelectColumns(FactTable, {"name", "is_outdoor", "has_route"}),
+				    Distinct         = Table.Distinct(Selected),
+				
+				    // ── 2. Enforce correct types ───────────────────────────────────────────────
+				    Typed            = Table.TransformColumnTypes(Distinct, {
+				                           {"name",       type text},
+				                           {"is_outdoor", type logical},
+				                           {"has_route",  type logical}
+				                       }),
+				
+				    // ── 3. Surrogate key ───────────────────────────────────────────────────────
+				    WithKey          = Table.AddIndexColumn(Typed, "activity_type_key", 1, 1, Int64.Type),
+				
+				    // ── 4. Derived: activity category ─────────────────────────────────────────
+				    //    Groups the free-text name into a clean, controlled category label.
+				    //    Extend the lookup list here as new activity types are added.
+				    WithCategory     = Table.AddColumn(WithKey, "activity_category",
+				                           each
+				                               if Text.Contains(Text.Lower([name]), "run")  then "Running"
+				                               else if Text.Contains(Text.Lower([name]), "walk") then "Walking"
+				                               else if Text.Contains(Text.Lower([name]), "hiit") then "HIIT"
+				                               else if Text.Contains(Text.Lower([name]), "ride") then "Cycling"
+				                               else if Text.Contains(Text.Lower([name]), "swim") then "Swimming"
+				                               else "Other",
+				                           type text),
+				
+				    // ── 5. Derived: sport type (Cardio / Strength / Mixed) ────────────────────
+				    WithSportType    = Table.AddColumn(WithCategory, "sport_type",
+				                           each
+				                               if [activity_category] = "HIIT"     then "Strength & Conditioning"
+				                               else if [is_outdoor] = true          then "Cardio – Outdoor"
+				                               else                                       "Cardio – Indoor",
+				                           type text),
+				
+				    // ── 6. Final column order ──────────────────────────────────────────────────
+				    Reordered        = Table.ReorderColumns(WithSportType, {
+				                           "activity_type_key",
+				                           "name",
+				                           "activity_category",
+				                           "sport_type",
+				                           "is_outdoor",
+				                           "has_route"
+				                       })
+				in
+				    Reordered
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,5 +1,5 @@
 # Ignore all .env files
-.env
+# .env
 
 # Ignore all virtual environment directories
 .venv/
@@ -9,4 +9,8 @@ __pycache__/
 *.pyc
 
 # Ignore tokens files
-tokens.json
+# tokens.json
+
+#Ignore folders
+# HUAWEI_HEALTHKIT_20260530033030/
+# HUAWEI_HEALTH_20260530033030/

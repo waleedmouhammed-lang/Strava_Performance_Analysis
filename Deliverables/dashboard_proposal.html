@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Performance Analysis — Dashboard Proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0a0c0f;
+    --surface:  #111418;
+    --surface2: #181c22;
+    --border:   #232830;
+    --text:     #e8eaf0;
+    --muted:    #5a6070;
+    --accent:   #00e5a0;
+    --accent2:  #ff6b35;
+    --accent3:  #4a9eff;
+    --warn:     #ffc940;
+    --z1: #5b9bd5;
+    --z2: #70ad47;
+    --z3: #ffc000;
+    --z4: #ff6600;
+    --z5: #c00000;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body:    'DM Sans', sans-serif;
+    --font-mono:    'DM Mono', monospace;
+    --r: 8px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Navigation ─────────────────────────────── */
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 32px;
+    height: 52px;
+    gap: 0;
+  }
+  .nav-brand {
+    font-family: var(--font-display);
+    font-size: 20px;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin-right: 40px;
+    flex-shrink: 0;
+  }
+  .nav-tabs { display: flex; gap: 0; flex: 1; }
+  .tab-btn {
+    background: none; border: none; cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 13px; font-weight: 500;
+    color: var(--muted);
+    padding: 0 20px;
+    height: 52px;
+    border-bottom: 2px solid transparent;
+    transition: color .2s, border-color .2s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-meta {
+    font-family: var(--font-mono);
+    font-size: 11px; color: var(--muted);
+    text-align: right;
+    line-height: 1.6;
+    flex-shrink: 0;
+  }
+  .nav-meta span { color: var(--text); }
+
+  /* ── Pages ───────────────────────────────────── */
+  .page { display: none; padding: 28px 32px 48px; }
+  .page.active { display: block; }
+
+  /* ── Page header ─────────────────────────────── */
+  .page-header {
+    display: flex; align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 36px; letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--text);
+  }
+  .page-title span { color: var(--accent); }
+  .page-desc {
+    font-size: 13px; color: var(--muted);
+    margin-top: 6px; font-weight: 300;
+  }
+  .page-badge {
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 500;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── KPI strip ───────────────────────────────── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px 18px 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .kpi.accent::before  { background: var(--accent); }
+  .kpi.accent2::before { background: var(--accent2); }
+  .kpi.accent3::before { background: var(--accent3); }
+  .kpi.warn::before    { background: var(--warn); }
+  .kpi.z2::before      { background: var(--z2); }
+  .kpi.z3::before      { background: var(--z3); }
+  .kpi-label {
+    font-size: 10px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-family: var(--font-display);
+    font-size: 32px; letter-spacing: 0.02em;
+    line-height: 1; color: var(--text);
+  }
+  .kpi-unit {
+    font-family: var(--font-mono);
+    font-size: 11px; color: var(--muted);
+    margin-top: 4px;
+  }
+  .kpi-delta {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px; margin-top: 6px;
+    padding: 2px 6px; border-radius: 3px;
+  }
+  .kpi-delta.up   { background: #00e5a015; color: var(--accent); }
+  .kpi-delta.warn { background: #ffc94015; color: var(--warn); }
+
+  /* ── Grid layouts ────────────────────────────── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3-1 { display: grid; grid-template-columns: 3fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 16px; }
+
+  /* ── Card ────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 18px 20px;
+  }
+  .card-title {
+    font-size: 10px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title-tag {
+    font-family: var(--font-mono);
+    font-size: 9px; padding: 2px 7px;
+    border: 1px solid var(--border); border-radius: 3px;
+    color: var(--muted); letter-spacing: 0.06em;
+  }
+
+  /* ── Bar chart ───────────────────────────────── */
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); width: 54px; flex-shrink: 0; text-align: right; }
+  .bar-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .bar-val { font-family: var(--font-mono); font-size: 11px; color: var(--text); width: 44px; flex-shrink: 0; }
+
+  /* ── Line sparkline ──────────────────────────── */
+  .spark-wrap { width: 100%; }
+  svg.spark { width: 100%; overflow: visible; }
+
+  /* ── Zone donut ──────────────────────────────── */
+  .zone-list { display: flex; flex-direction: column; gap: 10px; }
+  .zone-row { display: flex; align-items: center; gap: 10px; }
+  .zone-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .zone-name { font-size: 12px; color: var(--text); flex: 1; }
+  .zone-bar-track { width: 80px; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .zone-bar-fill { height: 100%; border-radius: 3px; }
+  .zone-count { font-family: var(--font-mono); font-size: 11px; color: var(--muted); width: 28px; text-align: right; }
+  .zone-pct { font-family: var(--font-mono); font-size: 11px; color: var(--muted); width: 34px; text-align: right; }
+
+  /* ── Weekly heatmap ──────────────────────────── */
+  .heatmap { display: flex; gap: 6px; flex-wrap: wrap; }
+  .hm-week { display: flex; flex-direction: column; gap: 4px; }
+  .hm-cell {
+    width: 22px; height: 22px; border-radius: 4px;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 8px; color: var(--muted);
+    cursor: default;
+    transition: transform .15s;
+  }
+  .hm-cell:hover { transform: scale(1.2); z-index: 2; }
+  .hm-cell.d0 { background: var(--surface2); }
+  .hm-cell.d1 { background: #00e5a015; border-color: #00e5a030; }
+  .hm-cell.d2 { background: #00e5a030; border-color: #00e5a060; }
+  .hm-cell.d3 { background: #00e5a060; border-color: #00e5a090; color: #000; }
+  .hm-cell.d4 { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 500; }
+  .hm-day-label { font-family: var(--font-mono); font-size: 8px; color: var(--muted); width: 22px; text-align: center; }
+
+  /* ── Activity log table ──────────────────────── */
+  .act-table { width: 100%; border-collapse: collapse; }
+  .act-table th {
+    font-family: var(--font-mono); font-size: 9px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); text-align: left;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .act-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .act-table tr:last-child td { border-bottom: none; }
+  .act-table tr:hover td { background: var(--surface2); }
+  .act-tag {
+    display: inline-block;
+    font-family: var(--font-mono); font-size: 9px;
+    padding: 2px 7px; border-radius: 3px;
+    letter-spacing: 0.04em;
+  }
+  .tag-walk  { background: #70ad4720; color: #70ad47; }
+  .tag-run   { background: #4a9eff20; color: var(--accent3); }
+  .tag-hiit  { background: #ff6b3520; color: var(--accent2); }
+  .act-hr { display: flex; align-items: center; gap: 5px; }
+  .hr-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Trend line ──────────────────────────────── */
+  .trend-wrap { position: relative; }
+
+  /* ── Scatter plot ────────────────────────────── */
+  .scatter-wrap { position: relative; }
+
+  /* ── Progress ring ───────────────────────────── */
+  .ring-wrap { display: flex; align-items: center; gap: 20px; }
+  .ring-stats { display: flex; flex-direction: column; gap: 10px; }
+  .ring-stat-row { display: flex; flex-direction: column; }
+  .ring-stat-label { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .ring-stat-val { font-family: var(--font-display); font-size: 22px; color: var(--text); }
+
+  /* ── Annotation ──────────────────────────────── */
+  .annotation {
+    font-size: 11px; color: var(--muted);
+    padding: 8px 12px;
+    background: var(--surface2);
+    border-left: 2px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+  .annotation strong { color: var(--text); }
+
+  /* ── PBI visual label ────────────────────────── */
+  .pbi-label {
+    font-family: var(--font-mono);
+    font-size: 9px; color: var(--muted);
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    letter-spacing: 0.06em;
+  }
+  .pbi-label span { color: #4a9eff; }
+
+  /* ── Scroll ──────────────────────────────────── */
+  html { scroll-behavior: smooth; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════ NAV -->
+<nav class="nav">
+  <div class="nav-brand">PERFORM</div>
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="showPage('p1',this)">01 · Bird's Eye View</button>
+    <button class="tab-btn" onclick="showPage('p2',this)">02 · Activity Detail</button>
+    <button class="tab-btn" onclick="showPage('p3',this)">03 · Cardiovascular Progress</button>
+  </div>
+  <div class="nav-meta">
+    Dataset &nbsp;<span>Apr 13 – May 24, 2026</span><br>
+    46 activities &nbsp;<span>843017438</span>
+  </div>
+</nav>
+
+
+<!-- ════════════════════════════════════════════════════════ PAGE 1: BIRD'S EYE -->
+<div class="page active" id="p1">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">BIRD'S <span>EYE</span> VIEW</div>
+      <div class="page-desc">Aggregated overview of all training activity · Apr – May 2026</div>
+    </div>
+    <div class="page-badge">PAGE 1 OF 3 · OVERVIEW</div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip">
+    <div class="kpi accent">
+      <div class="kpi-label">Total Activities</div>
+      <div class="kpi-value">46</div>
+      <div class="kpi-unit">sessions logged</div>
+      <div class="kpi-delta up">↑ 28 outdoor · 9 HIIT</div>
+    </div>
+    <div class="kpi accent3">
+      <div class="kpi-label">Total Distance</div>
+      <div class="kpi-value">286</div>
+      <div class="kpi-unit">km covered</div>
+      <div class="kpi-delta up">↑ avg 6.2 km / session</div>
+    </div>
+    <div class="kpi accent2">
+      <div class="kpi-label">Moving Time</div>
+      <div class="kpi-value">52.6</div>
+      <div class="kpi-unit">hours total</div>
+      <div class="kpi-delta up">↑ avg 68 min / session</div>
+    </div>
+    <div class="kpi warn">
+      <div class="kpi-label">Elevation Gain</div>
+      <div class="kpi-value">2,241</div>
+      <div class="kpi-unit">metres climbed</div>
+      <div class="kpi-delta warn">avg 49 m / session</div>
+    </div>
+    <div class="kpi z2">
+      <div class="kpi-label">Avg Heart Rate</div>
+      <div class="kpi-value">115.6</div>
+      <div class="kpi-unit">bpm (cardiac sessions)</div>
+      <div class="kpi-delta up">Zone 2 dominant</div>
+    </div>
+    <div class="kpi z3">
+      <div class="kpi-label">Avg Pace</div>
+      <div class="kpi-value">10:36</div>
+      <div class="kpi-unit">min / km</div>
+      <div class="kpi-delta up">↑ improving W-o-W</div>
+    </div>
+    <div class="kpi accent">
+      <div class="kpi-label">Avg Cadence</div>
+      <div class="kpi-value">55.0</div>
+      <div class="kpi-unit">steps / min</div>
+      <div class="kpi-delta up">↑ 53.5 → 58.7</div>
+    </div>
+  </div>
+
+  <!-- Row 2: Weekly volume bar + zone distribution + activity mix -->
+  <div class="grid-3">
+
+    <!-- Weekly Distance -->
+    <div class="card">
+      <div class="card-title">Weekly Distance (km) <span class="card-title-tag">BAR CHART</span></div>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label">W16</div>
+          <div class="bar-track"><div class="bar-fill" style="width:17%;background:var(--accent3)"></div></div>
+          <div class="bar-val">20.8</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">W17</div>
+          <div class="bar-track"><div class="bar-fill" style="width:38%;background:var(--accent3)"></div></div>
+          <div class="bar-val">47.4</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">W18</div>
+          <div class="bar-track"><div class="bar-fill" style="width:51%;background:var(--accent3)"></div></div>
+          <div class="bar-val">60.4</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">W19</div>
+          <div class="bar-track"><div class="bar-fill" style="width:49%;background:var(--accent)"></div></div>
+          <div class="bar-val">56.6</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">W20</div>
+          <div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--accent)"></div></div>
+          <div class="bar-val">45.1</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">W21</div>
+          <div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--accent)"></div></div>
+          <div class="bar-val">45.8</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">W22</div>
+          <div class="bar-track"><div class="bar-fill" style="width:10%;background:var(--accent2)"></div></div>
+          <div class="bar-val">12.1</div>
+        </div>
+      </div>
+      <div class="pbi-label">Power BI visual: <span>Clustered bar · Axis = YearWeek · Value = Total Distance</span></div>
+    </div>
+
+    <!-- HR Zone Distribution -->
+    <div class="card">
+      <div class="card-title">HR Zone Distribution <span class="card-title-tag">DONUT + TABLE</span></div>
+      <div style="display:flex;gap:16px;align-items:center;margin-bottom:14px;">
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle cx="44" cy="44" r="36" fill="none" stroke="var(--surface2)" stroke-width="14"/>
+          <!-- Z2: 32/44 = 72.7% = 164° stroke-dasharray on circumference 226 -->
+          <circle cx="44" cy="44" r="36" fill="none" stroke="var(--z2)" stroke-width="14"
+            stroke-dasharray="164 62" stroke-dashoffset="56.5" stroke-linecap="butt"/>
+          <!-- Z3: 7/44 = 15.9% -->
+          <circle cx="44" cy="44" r="36" fill="none" stroke="var(--z3)" stroke-width="14"
+            stroke-dasharray="36 190" stroke-dashoffset="-108" stroke-linecap="butt"/>
+          <!-- Z1: 5/44 = 11.4% -->
+          <circle cx="44" cy="44" r="36" fill="none" stroke="var(--z1)" stroke-width="14"
+            stroke-dasharray="26 200" stroke-dashoffset="-144" stroke-linecap="butt"/>
+          <text x="44" y="48" text-anchor="middle" fill="var(--text)" font-family="'Bebas Neue'" font-size="16">44</text>
+        </svg>
+        <div class="zone-list">
+          <div class="zone-row"><div class="zone-dot" style="background:var(--z2)"></div><div class="zone-name">Zone 2 — Aerobic Base</div><div class="zone-bar-track"><div class="zone-bar-fill" style="width:73%;background:var(--z2)"></div></div><div class="zone-count">32</div><div class="zone-pct">72.7%</div></div>
+          <div class="zone-row"><div class="zone-dot" style="background:var(--z3)"></div><div class="zone-name">Zone 3 — Aerobic End.</div><div class="zone-bar-track"><div class="zone-bar-fill" style="width:16%;background:var(--z3)"></div></div><div class="zone-count">7</div><div class="zone-pct">15.9%</div></div>
+          <div class="zone-row"><div class="zone-dot" style="background:var(--z1)"></div><div class="zone-name">Zone 1 — Recovery</div><div class="zone-bar-track"><div class="zone-bar-fill" style="width:11%;background:var(--z1)"></div></div><div class="zone-count">5</div><div class="zone-pct">11.4%</div></div>
+          <div class="zone-row"><div class="zone-dot" style="background:var(--muted)"></div><div class="zone-name">No HR Data</div><div class="zone-bar-track"><div class="zone-bar-fill" style="width:4%;background:var(--muted)"></div></div><div class="zone-count">2</div><div class="zone-pct">4.5%</div></div>
+        </div>
+      </div>
+      <div class="annotation"><strong>72.7% Zone 2 dominance</strong> — consistent with polarised base-building. HIIT sessions pushing Z3 provide the necessary high-intensity stimulus.</div>
+      <div class="pbi-label">Power BI visual: <span>Donut · Legend = zone_label · Values = # Activities · Sort by intensity_level</span></div>
+    </div>
+
+    <!-- Activity Type Mix -->
+    <div class="card">
+      <div class="card-title">Activity Mix <span class="card-title-tag">STACKED BAR</span></div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">By count</div>
+        <div style="height:20px;border-radius:4px;overflow:hidden;display:flex;">
+          <div style="width:76%;background:var(--z2);"></div>
+          <div style="width:4%;background:var(--accent3);"></div>
+          <div style="width:2%;background:var(--warn);"></div>
+          <div style="width:18%;background:var(--accent2);"></div>
+        </div>
+        <div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><div style="width:8px;height:8px;border-radius:2px;background:var(--z2)"></div>Outdoor Walk 35</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><div style="width:8px;height:8px;border-radius:2px;background:var(--accent3)"></div>Outdoor Run 1</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><div style="width:8px;height:8px;border-radius:2px;background:var(--warn)"></div>Morning Walk 1</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><div style="width:8px;height:8px;border-radius:2px;background:var(--accent2)"></div>HIIT 9</div>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Distance by type (outdoor only)</div>
+        <div class="bar-chart">
+          <div class="bar-row"><div class="bar-label" style="width:70px;">Walk</div><div class="bar-track"><div class="bar-fill" style="width:98%;background:var(--z2)"></div></div><div class="bar-val">282km</div></div>
+          <div class="bar-row"><div class="bar-label" style="width:70px;">Run</div><div class="bar-track"><div class="bar-fill" style="width:1%;background:var(--accent3)"></div></div><div class="bar-val">3.3km</div></div>
+        </div>
+      </div>
+      <div class="pbi-label">Power BI visual: <span>100% Stacked bar · Legend = activity_category · Values = # Activities and Total Distance</span></div>
+    </div>
+  </div>
+
+  <!-- Row 3: Cumulative distance + weekly activity heatmap -->
+  <div class="grid-2-1">
+
+    <!-- Cumulative distance trend -->
+    <div class="card">
+      <div class="card-title">Cumulative Distance Over Time <span class="card-title-tag">AREA LINE CHART</span></div>
+      <svg class="spark" height="140" viewBox="0 0 560 140">
+        <!-- Axes -->
+        <line x1="40" y1="10" x2="40" y2="120" stroke="var(--border)" stroke-width="1"/>
+        <line x1="40" y1="120" x2="540" y2="120" stroke="var(--border)" stroke-width="1"/>
+        <!-- Y labels -->
+        <text x="34" y="14" fill="var(--muted)" font-size="9" text-anchor="end" font-family="'DM Mono'">286km</text>
+        <text x="34" y="68" fill="var(--muted)" font-size="9" text-anchor="end" font-family="'DM Mono'">143km</text>
+        <text x="34" y="122" fill="var(--muted)" font-size="9" text-anchor="end" font-family="'DM Mono'">0km</text>
+        <!-- Area + line (cumulative: approximate key points) -->
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#00e5a0" stop-opacity="0.25"/>
+            <stop offset="100%" stop-color="#00e5a0" stop-opacity="0.02"/>
+          </linearGradient>
+        </defs>
+        <path d="M40,120 L68,117 L96,113 L124,107 L152,96 L180,86 L208,76 L236,66 L264,56 L292,46 L320,36 L348,27 L376,22 L404,17 L432,14 L460,12 L488,11 L516,11 L540,10 L540,120 Z"
+          fill="url(#areaGrad)"/>
+        <path d="M40,120 L68,117 L96,113 L124,107 L152,96 L180,86 L208,76 L236,66 L264,56 L292,46 L320,36 L348,27 L376,22 L404,17 L432,14 L460,12 L488,11 L516,11 L540,10"
+          fill="none" stroke="var(--accent)" stroke-width="2"/>
+        <!-- Target reference line at 300km -->
+        <line x1="40" y1="8" x2="540" y2="8" stroke="var(--accent2)" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+        <text x="544" y="11" fill="var(--accent2)" font-size="9" font-family="'DM Mono'" opacity="0.8">300km target</text>
+        <!-- Date labels -->
+        <text x="40"  y="132" fill="var(--muted)" font-size="9" text-anchor="middle" font-family="'DM Mono'">Apr 13</text>
+        <text x="200" y="132" fill="var(--muted)" font-size="9" text-anchor="middle" font-family="'DM Mono'">Apr 30</text>
+        <text x="360" y="132" fill="var(--muted)" font-size="9" text-anchor="middle" font-family="'DM Mono'">May 14</text>
+        <text x="540" y="132" fill="var(--muted)" font-size="9" text-anchor="middle" font-family="'DM Mono'">May 24</text>
+      </svg>
+      <div class="annotation"><strong>286 km in 42 days</strong> — 95% of a 300 km milestone. At current weekly volume (~50 km/wk) the milestone lands mid-Week 23.</div>
+      <div class="pbi-label">Power BI visual: <span>Area chart · X = Date · Y = CALCULATE(SUM distance, DATESYTD / ALLSELECTED earlier dates) · Reference line at 300km</span></div>
+    </div>
+
+    <!-- Activity Calendar Heatmap -->
+    <div class="card">
+      <div class="card-title">Activity Calendar <span class="card-title-tag">MATRIX / HEATMAP</span></div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Colour intensity = daily distance</div>
+      <!-- Day labels -->
+      <div style="display:flex;gap:6px;margin-bottom:4px;">
+        <div style="width:22px;"></div>
+        <div style="display:flex;gap:20px;">
+          <div style="font-family:'DM Mono';font-size:8px;color:var(--muted);">W16</div>
+          <div style="font-family:'DM Mono';font-size:8px;color:var(--muted);">W17</div>
+          <div style="font-family:'DM Mono';font-size:8px;color:var(--muted);">W18</div>
+          <div style="font-family:'DM Mono';font-size:8px;color:var(--muted);">W19</div>
+          <div style="font-family:'DM Mono';font-size:8px;color:var(--muted);">W20</div>
+          <div style="font-family:'DM Mono';font-size:8px;color:var(--muted);">W21</div>
+          <div style="font-family:'DM Mono';font-size:8px;color:var(--muted);">W22</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;">
+        <div style="display:flex;flex-direction:column;gap:4px;padding-top:1px;">
+          <div style="font-family:'DM Mono';font-size:8px;color:var(--muted);height:22px;display:flex;align-items:center;">Mon</div>
+          <div style="font-family:'DM Mono';font-size:8px;color:var(--muted);height:22px;display:flex;align-items:center;">Tue</div>
+          <div style="font-family:'DM Mono';font-size:8px;color:var(--muted);height:22px;display:flex;align-items:center;">Wed</div>
+          <div style="font-family:'DM Mono';font-size:8px;color:var(--muted);height:22px;display:flex;align-items:center;">Thu</div>
+          <div style="font-family:'DM Mono';font-size:8px;color:var(--muted);height:22px;display:flex;align-items:center;">Fri</div>
+          <div style="font-family:'DM Mono';font-size:8px;color:var(--muted);height:22px;display:flex;align-items:center;">Sat</div>
+          <div style="font-family:'DM Mono';font-size:8px;color:var(--muted);height:22px;display:flex;align-items:center;">Sun</div>
+        </div>
+        <!-- W16 -->
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div class="hm-cell d2" title="Mon Apr 13 · 6.4km">6.4</div>
+          <div class="hm-cell d1" title="Tue Apr 14 · 3.7km">3.7</div>
+          <div class="hm-cell d1" title="Wed Apr 15 · 4.1km">4.1</div>
+          <div class="hm-cell d2" title="Thu Apr 16 · 6.5km">6.5</div>
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d0">—</div>
+        </div>
+        <!-- W17 -->
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div class="hm-cell d2" title="Mon Apr 20 · 6.9km">6.9</div>
+          <div class="hm-cell d2" title="Tue Apr 21 · 7.4km">7.4</div>
+          <div class="hm-cell d2" title="Wed Apr 22 · 7.9km">7.9</div>
+          <div class="hm-cell d2" title="Thu Apr 23 · 7.9km">7.9</div>
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d2" title="Sat Apr 25 · 8.3km">8.3</div>
+          <div class="hm-cell d2" title="Sun Apr 19 · 7.0km">7.0</div>
+        </div>
+        <!-- W18 -->
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d3" title="Wed Apr 29 · 10.2km">10.2</div>
+          <div class="hm-cell d3" title="Thu Apr 30 · 8.1km">8.1</div>
+          <div class="hm-cell d1" title="Fri May 1 · 1.7km">1.7</div>
+          <div class="hm-cell d4" title="Sat May 2 · 10.7km">10.7</div>
+          <div class="hm-cell d3" title="Sun Apr 26 · 9.5km">9.5</div>
+        </div>
+        <!-- W19 -->
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div class="hm-cell d3" title="Mon May 4 · 10.3km">10.3</div>
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d3" title="Wed May 6 · 10.5km">10.5</div>
+          <div class="hm-cell d3" title="Thu May 7 · 10.3km">10.3</div>
+          <div class="hm-cell d4" title="Fri May 8 · 14.9km">14.9</div>
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d3" title="Sun May 3 · 10.7km">10.7</div>
+        </div>
+        <!-- W20 -->
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div class="hm-cell d3" title="Mon May 11 · 11.3km">11.3</div>
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d2" title="Thu May 14 · 6.1km">6.1</div>
+          <div class="hm-cell d3" title="Fri May 15 · 10.3km">10.3</div>
+          <div class="hm-cell d2" title="Sat May 16 · 6.1km">6.1</div>
+          <div class="hm-cell d3" title="Sun May 10 · 11.2km">11.2</div>
+        </div>
+        <!-- W21 -->
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div class="hm-cell d3" title="Mon May 18 · 10.4km">10.4</div>
+          <div class="hm-cell d2" title="Tue May 19 · 6.2km">6.2</div>
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d3" title="Thu May 21 · 8.6km">8.6</div>
+          <div class="hm-cell d0" title="Fri May 22 · HIIT">H</div>
+          <div class="hm-cell d3" title="Sat May 23 · 10.4km">10.4</div>
+          <div class="hm-cell d3" title="Sun May 17 · 10.2km">10.2</div>
+        </div>
+        <!-- W22 -->
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d0">—</div>
+          <div class="hm-cell d4" title="Sun May 24 · 12.1km">12.1</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
+        <div style="font-family:'DM Mono';font-size:9px;color:var(--muted);">Less</div>
+        <div class="hm-cell d0" style="width:14px;height:14px;"></div>
+        <div class="hm-cell d1" style="width:14px;height:14px;"></div>
+        <div class="hm-cell d2" style="width:14px;height:14px;"></div>
+        <div class="hm-cell d3" style="width:14px;height:14px;"></div>
+        <div class="hm-cell d4" style="width:14px;height:14px;"></div>
+        <div style="font-family:'DM Mono';font-size:9px;color:var(--muted);">More</div>
+      </div>
+      <div class="pbi-label">Power BI visual: <span>Matrix · Rows = DayName (sort by DayOfWeekNumber) · Cols = YearWeek · Values = Total Distance · Conditional formatting by value</span></div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════ PAGE 2: ACTIVITY DETAIL -->
+<div class="page" id="p2">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">ACTIVITY <span>DETAIL</span></div>
+      <div class="page-desc">Per-session breakdown · Filter by date, type, or HR zone</div>
+    </div>
+    <div class="page-badge">PAGE 2 OF 3 · DRILL-THROUGH</div>
+  </div>
+
+  <!-- Slicer bar -->
+  <div style="display:flex;gap:10px;margin-bottom:20px;align-items:center;flex-wrap:wrap;">
+    <div style="font-family:'DM Mono';font-size:10px;color:var(--muted);letter-spacing:.08em;">FILTER BY:</div>
+    <div style="padding:5px 14px;border:1px solid var(--accent);border-radius:4px;font-size:12px;color:var(--accent);cursor:pointer;">All Types</div>
+    <div style="padding:5px 14px;border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--muted);cursor:pointer;">Walking</div>
+    <div style="padding:5px 14px;border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--muted);cursor:pointer;">HIIT</div>
+    <div style="padding:5px 14px;border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--muted);cursor:pointer;">Running</div>
+    <div style="margin-left:auto;padding:5px 14px;border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--muted);">Apr 13 — May 24, 2026 ▾</div>
+    <div style="padding:5px 14px;border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--muted);">All Zones ▾</div>
+  </div>
+
+  <!-- KPI strip for selected context -->
+  <div class="kpi-strip" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px;">
+    <div class="kpi accent"><div class="kpi-label">Sessions</div><div class="kpi-value">46</div><div class="kpi-unit">in selection</div></div>
+    <div class="kpi accent3"><div class="kpi-label">Total Distance</div><div class="kpi-value">286.1</div><div class="kpi-unit">km</div></div>
+    <div class="kpi accent2"><div class="kpi-label">Avg Duration</div><div class="kpi-value">68.6</div><div class="kpi-unit">min / session</div></div>
+    <div class="kpi warn"><div class="kpi-label">Avg Cadence</div><div class="kpi-value">55.0</div><div class="kpi-unit">steps / min</div></div>
+    <div class="kpi z2"><div class="kpi-label">Avg Suffer Score</div><div class="kpi-value">15.8</div><div class="kpi-unit">Strava RPE proxy</div></div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:16px;">
+
+    <!-- Pace vs Distance scatter -->
+    <div class="card">
+      <div class="card-title">Pace vs Distance · Per Session <span class="card-title-tag">SCATTER</span></div>
+      <svg width="100%" height="160" viewBox="0 0 460 160">
+        <line x1="40" y1="10" x2="40" y2="140" stroke="var(--border)" stroke-width="1"/>
+        <line x1="40" y1="140" x2="445" y2="140" stroke="var(--border)" stroke-width="1"/>
+        <text x="34" y="14" fill="var(--muted)" font-size="9" text-anchor="end" font-family="'DM Mono'">12.0</text>
+        <text x="34" y="75" fill="var(--muted)" font-size="9" text-anchor="end" font-family="'DM Mono'">10.5</text>
+        <text x="34" y="142" fill="var(--muted)" font-size="9" text-anchor="end" font-family="'DM Mono'">9.0</text>
+        <text x="40"  y="152" fill="var(--muted)" font-size="9" text-anchor="middle" font-family="'DM Mono'">0km</text>
+        <text x="245" y="152" fill="var(--muted)" font-size="9" text-anchor="middle" font-family="'DM Mono'">8km</text>
+        <text x="440" y="152" fill="var(--muted)" font-size="9" text-anchor="middle" font-family="'DM Mono'">15km</text>
+        <!-- Trend line (negative slope — longer = faster) -->
+        <line x1="60" y1="100" x2="430" y2="50" stroke="var(--accent)" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+        <!-- Scatter dots (sampled key activities, x=distance mapped 0-14.9km→40-440, y=pace mapped 9.7-13.5→140-10) -->
+        <circle cx="92" cy="95" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="105" cy="100" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="112" cy="90" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="152" cy="98" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="155" cy="100" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="167" cy="96" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="175" cy="94" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="176" cy="95" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="193" cy="96" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="222" cy="95" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="227" cy="94" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="238" cy="94" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="237" cy="94" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="185" cy="97" r="4" fill="var(--z1)" opacity="0.8"/>
+        <!-- Long walk May 8 — outlier high pace -->
+        <circle cx="352" cy="110" r="5" fill="var(--warn)" opacity="0.9"/>
+        <text x="358" y="106" fill="var(--warn)" font-size="8" font-family="'DM Mono'">May 8 · 14.9km</text>
+        <!-- HIIT (zero distance) -->
+        <circle cx="45" cy="70" r="4" fill="var(--accent2)" opacity="0.8"/>
+        <circle cx="45" cy="68" r="4" fill="var(--accent2)" opacity="0.8"/>
+        <circle cx="45" cy="72" r="4" fill="var(--accent2)" opacity="0.8"/>
+        <!-- Late improvements -->
+        <circle cx="238" cy="88" r="4" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="240" cy="84" r="5" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="282" cy="72" r="4" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="288" cy="65" r="5" fill="var(--accent)" opacity="0.9"/>
+      </svg>
+      <div class="annotation"><strong>Negative correlation confirmed</strong> — longer sessions correlate with faster pace, indicating accumulating aerobic efficiency. May 8 (14.9 km) is an outlier due to mixed terrain.</div>
+      <div class="pbi-label">Power BI visual: <span>Scatter · X = distance_km · Y = avg_pace (inverted axis) · Size = suffer_score · Colour = activity_category · Trend line enabled</span></div>
+    </div>
+
+    <!-- Duration vs HR scatter -->
+    <div class="card">
+      <div class="card-title">Heart Rate vs Duration · Per Session <span class="card-title-tag">SCATTER</span></div>
+      <svg width="100%" height="160" viewBox="0 0 460 160">
+        <line x1="40" y1="10" x2="40" y2="140" stroke="var(--border)" stroke-width="1"/>
+        <line x1="40" y1="140" x2="445" y2="140" stroke="var(--border)" stroke-width="1"/>
+        <text x="34" y="14"  fill="var(--muted)" font-size="9" text-anchor="end" font-family="'DM Mono'">135</text>
+        <text x="34" y="75"  fill="var(--muted)" font-size="9" text-anchor="end" font-family="'DM Mono'">115</text>
+        <text x="34" y="142" fill="var(--muted)" font-size="9" text-anchor="end" font-family="'DM Mono'">90</text>
+        <text x="40"  y="152" fill="var(--muted)" font-size="9" text-anchor="middle" font-family="'DM Mono'">20min</text>
+        <text x="245" y="152" fill="var(--muted)" font-size="9" text-anchor="middle" font-family="'DM Mono'">100min</text>
+        <text x="440" y="152" fill="var(--muted)" font-size="9" text-anchor="middle" font-family="'DM Mono'">170min</text>
+        <!-- Z1 dots (low HR, short) -->
+        <circle cx="120" cy="120" r="4" fill="var(--z1)" opacity="0.8"/>
+        <circle cx="135" cy="118" r="4" fill="var(--z1)" opacity="0.8"/>
+        <circle cx="100" cy="125" r="4" fill="var(--z1)" opacity="0.8"/>
+        <!-- Z2 dots (mid HR, varied duration) -->
+        <circle cx="160" cy="85" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="200" cy="82" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="240" cy="79" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="260" cy="80" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="265" cy="78" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="270" cy="81" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="275" cy="80" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="278" cy="83" r="4" fill="var(--z2)" opacity="0.8"/>
+        <circle cx="285" cy="77" r="4" fill="var(--z2)" opacity="0.8"/>
+        <!-- Z3 dots (high HR, HIIT short) -->
+        <circle cx="55" cy="35" r="5" fill="var(--z3)" opacity="0.8"/>
+        <circle cx="58" cy="38" r="5" fill="var(--z3)" opacity="0.8"/>
+        <circle cx="52" cy="30" r="5" fill="var(--z3)" opacity="0.8"/>
+        <circle cx="60" cy="28" r="5" fill="var(--z3)" opacity="0.8"/>
+        <!-- Late long high-HR sessions -->
+        <circle cx="290" cy="58" r="5" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="310" cy="52" r="5" fill="var(--accent)" opacity="0.9"/>
+        <text x="316" y="48" fill="var(--accent)" font-size="8" font-family="'DM Mono'">May 24</text>
+      </svg>
+      <div class="annotation"><strong>HIIT cluster (top-left)</strong> — short duration, high HR. Walking cluster (centre) — long duration, controlled Zone 2 HR. The two clusters confirm the polarised training model is working.</div>
+      <div class="pbi-label">Power BI visual: <span>Scatter · X = moving_time_min · Y = avg_heartrate · Size = distance_km · Colour = zone_label · Quadrant reference lines</span></div>
+    </div>
+
+  </div>
+
+  <!-- Activity log -->
+  <div class="card">
+    <div class="card-title">Activity Log — Last 15 Sessions <span class="card-title-tag">TABLE · DRILL-THROUGH</span></div>
+    <table class="act-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Distance</th>
+          <th>Duration</th>
+          <th>Avg Pace</th>
+          <th>Avg HR</th>
+          <th>Zone</th>
+          <th>Cadence</th>
+          <th>Elev Gain</th>
+          <th>Suffer Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>May 24</td><td><span class="act-tag tag-walk">Walk</span></td><td>12.10 km</td><td>134 min</td><td>9:43</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z3)"></div>131</div></td><td>Z3</td><td>58.7</td><td>104 m</td><td>40</td></tr>
+        <tr><td>May 23</td><td><span class="act-tag tag-walk">Walk</span></td><td>10.41 km</td><td>109 min</td><td>10:18</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z2)"></div>121</div></td><td>Z2</td><td>57.2</td><td>80 m</td><td>23</td></tr>
+        <tr><td>May 22</td><td><span class="act-tag tag-hiit">HIIT</span></td><td>—</td><td>21 min</td><td>—</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z3)"></div>129</div></td><td>Z3</td><td>—</td><td>—</td><td>12</td></tr>
+        <tr><td>May 21</td><td><span class="act-tag tag-walk">Walk</span></td><td>8.56 km</td><td>84 min</td><td>9:48</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z3)"></div>126</div></td><td>Z3</td><td>58.1</td><td>52 m</td><td>26</td></tr>
+        <tr><td>May 19</td><td><span class="act-tag tag-walk">Walk</span></td><td>6.22 km</td><td>79 min</td><td>10:16</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z2)"></div>122</div></td><td>Z2</td><td>56.7</td><td>58 m</td><td>23</td></tr>
+        <tr><td>May 18</td><td><span class="act-tag tag-walk">Walk</span></td><td>10.36 km</td><td>116 min</td><td>10:04</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z2)"></div>123</div></td><td>Z2</td><td>57.2</td><td>79 m</td><td>30</td></tr>
+        <tr><td>May 17</td><td><span class="act-tag tag-walk">Walk</span></td><td>10.24 km</td><td>106 min</td><td>10:21</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z2)"></div>118</div></td><td>Z2</td><td>56.2</td><td>80 m</td><td>24</td></tr>
+        <tr><td>May 16</td><td><span class="act-tag tag-walk">Walk</span></td><td>6.13 km</td><td>74 min</td><td>10:23</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z3)"></div>131</div></td><td>Z3</td><td>56.2</td><td>51 m</td><td>27</td></tr>
+        <tr><td>May 15</td><td><span class="act-tag tag-walk">Walk</span></td><td>10.29 km</td><td>109 min</td><td>10:34</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z2)"></div>110</div></td><td>Z2</td><td>55.8</td><td>86 m</td><td>21</td></tr>
+        <tr><td>May 14</td><td><span class="act-tag tag-walk">Walk</span></td><td>6.15 km</td><td>80 min</td><td>10:46</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z2)"></div>123</div></td><td>Z2</td><td>54.9</td><td>51 m</td><td>24</td></tr>
+        <tr><td>May 11</td><td><span class="act-tag tag-walk">Walk</span></td><td>11.28 km</td><td>115 min</td><td>10:14</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z2)"></div>122</div></td><td>Z2</td><td>56.6</td><td>92 m</td><td>28</td></tr>
+        <tr><td>May 10</td><td><span class="act-tag tag-walk">Walk</span></td><td>11.23 km</td><td>119 min</td><td>10:36</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z2)"></div>118</div></td><td>Z2</td><td>55.5</td><td>92 m</td><td>28</td></tr>
+        <tr><td>May 8</td><td><span class="act-tag tag-walk">Walk</span></td><td>14.85 km</td><td>168 min</td><td>11:54</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z2)"></div>104</div></td><td>Z2</td><td>52.7</td><td>121 m</td><td>31</td></tr>
+        <tr><td>May 7</td><td><span class="act-tag tag-walk">Walk</span></td><td>10.25 km</td><td>121 min</td><td>10:41</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z1)"></div>99</div></td><td>Z1</td><td>54.9</td><td>82 m</td><td>22</td></tr>
+        <tr><td>May 6</td><td><span class="act-tag tag-walk">Walk</span></td><td>10.52 km</td><td>111 min</td><td>10:31</td><td><div class="act-hr"><div class="hr-dot" style="background:var(--z2)"></div>112</div></td><td>Z2</td><td>55.3</td><td>36 m</td><td>23</td></tr>
+      </tbody>
+    </table>
+    <div class="pbi-label">Power BI visual: <span>Table · All FactActivities measures + DimDate[Date] + DimActivityType[activity_category] + DimHRZone[zone_label] · Conditional formatting on Avg HR column · Sort by Date DESC</span></div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════ PAGE 3: CARDIOVASCULAR PROGRESS -->
+<div class="page" id="p3">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">CARDIOVASCULAR <span>PROGRESS</span></div>
+      <div class="page-desc">Heart rate adaptation · Cardiac efficiency · Aerobic development over time</div>
+    </div>
+    <div class="page-badge">PAGE 3 OF 3 · PERFORMANCE ANALYTICS</div>
+  </div>
+
+  <!-- Cardiac KPIs -->
+  <div class="kpi-strip" style="grid-template-columns:repeat(6,1fr);">
+    <div class="kpi accent">
+      <div class="kpi-label">HR Drop (Apr→May)</div>
+      <div class="kpi-value">−3.1</div>
+      <div class="kpi-unit">bpm at same distance</div>
+      <div class="kpi-delta up">↑ cardiac adaptation</div>
+    </div>
+    <div class="kpi z2">
+      <div class="kpi-label">Avg Resting-Like HR</div>
+      <div class="kpi-value">109</div>
+      <div class="kpi-unit">bpm (Zone 1 sessions)</div>
+      <div class="kpi-delta up">improving base</div>
+    </div>
+    <div class="kpi accent3">
+      <div class="kpi-label">Pace Improvement</div>
+      <div class="kpi-value">−0.92</div>
+      <div class="kpi-unit">min/km over 6 weeks</div>
+      <div class="kpi-delta up">↑ 8.7% faster</div>
+    </div>
+    <div class="kpi warn">
+      <div class="kpi-label">Cadence Growth</div>
+      <div class="kpi-value">+4.2</div>
+      <div class="kpi-unit">steps/min (W16→W22)</div>
+      <div class="kpi-delta up">53.5 → 58.7</div>
+    </div>
+    <div class="kpi accent2">
+      <div class="kpi-label">Max HR Seen</div>
+      <div class="kpi-value">165</div>
+      <div class="kpi-unit">bpm (May 16)</div>
+      <div class="kpi-delta warn">est. max ~185 bpm</div>
+    </div>
+    <div class="kpi z3">
+      <div class="kpi-label">Cardiac Cost Index</div>
+      <div class="kpi-value">−3.5%</div>
+      <div class="kpi-unit">HR·min per km trend</div>
+      <div class="kpi-delta up">↑ efficiency gain</div>
+    </div>
+  </div>
+
+  <!-- Row 2: HR trend + Pace trend -->
+  <div class="grid-2">
+
+    <!-- Avg HR over time -->
+    <div class="card">
+      <div class="card-title">Average Heart Rate Trend · Daily (Outdoor Only) <span class="card-title-tag">LINE CHART</span></div>
+      <svg width="100%" height="150" viewBox="0 0 460 150">
+        <line x1="40" y1="10" x2="40" y2="130" stroke="var(--border)" stroke-width="1"/>
+        <line x1="40" y1="130" x2="450" y2="130" stroke="var(--border)" stroke-width="1"/>
+        <!-- Zone bands -->
+        <rect x="40" y="10"  width="410" height="30" fill="var(--z3)" opacity="0.06"/>
+        <rect x="40" y="40"  width="410" height="50" fill="var(--z2)" opacity="0.06"/>
+        <rect x="40" y="90"  width="410" height="40" fill="var(--z1)" opacity="0.06"/>
+        <text x="34" y="14"  fill="var(--z3)" font-size="8" text-anchor="end" font-family="'DM Mono'">130</text>
+        <text x="34" y="44"  fill="var(--z2)" font-size="8" text-anchor="end" font-family="'DM Mono'">120</text>
+        <text x="34" y="94"  fill="var(--z1)" font-size="8" text-anchor="end" font-family="'DM Mono'">110</text>
+        <text x="34" y="132" fill="var(--muted)" font-size="8" text-anchor="end" font-family="'DM Mono'">90</text>
+        <!-- Trend line (7-day rolling avg approximation) -->
+        <path d="M60,80 L80,75 L100,72 L120,72 L140,73 L160,74 L180,74 L200,73 L220,72 L240,71 L260,72 L280,68 L300,65 L320,67 L340,62 L360,60 L380,58 L400,56 L420,54 L440,50"
+          fill="none" stroke="var(--accent2)" stroke-width="1.5" stroke-dasharray="5 3" opacity="0.7"/>
+        <!-- Raw HR dots -->
+        <circle cx="60"  cy="76" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="75"  cy="68" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="90"  cy="72" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="105" cy="73" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="120" cy="74" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="135" cy="73" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="150" cy="72" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="165" cy="74" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="180" cy="72" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="195" cy="73" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="210" cy="74" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="225" cy="73" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="240" cy="70" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="255" cy="63" r="3" fill="var(--z1)" opacity="0.7"/>
+        <circle cx="270" cy="56" r="3" fill="var(--z1)" opacity="0.7"/>
+        <circle cx="285" cy="71" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="300" cy="71" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="315" cy="71" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="330" cy="70" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="345" cy="69" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="360" cy="62" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="375" cy="64" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="390" cy="58" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="405" cy="57" r="3" fill="var(--z2)" opacity="0.7"/>
+        <circle cx="420" cy="55" r="3" fill="var(--z3)" opacity="0.7"/>
+        <circle cx="435" cy="50" r="4" fill="var(--z3)" opacity="0.9"/>
+        <!-- Zone labels -->
+        <text x="446" y="26"  fill="var(--z3)" font-size="8" font-family="'DM Mono'">Z3</text>
+        <text x="446" y="66"  fill="var(--z2)" font-size="8" font-family="'DM Mono'">Z2</text>
+        <text x="446" y="115" fill="var(--z1)" font-size="8" font-family="'DM Mono'">Z1</text>
+        <!-- Date labels -->
+        <text x="60"  y="143" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">Apr 14</text>
+        <text x="245" y="143" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">May 4</text>
+        <text x="435" y="143" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">May 24</text>
+        <!-- Trend label -->
+        <text x="200" y="62" fill="var(--accent2)" font-size="8" font-family="'DM Mono'" opacity="0.8">7-day rolling avg →</text>
+      </svg>
+      <div class="annotation"><strong>Upward HR trend in late May</strong> is expected and healthy — longer distances + higher cadence naturally push HR up. The key signal is that HR relative to pace is improving (you go faster at the same HR).</div>
+      <div class="pbi-label">Power BI visual: <span>Line chart · X = Date · Y = Avg HR · Secondary Y = 7-day rolling AVERAGEX · Reference band = zone colour ranges · Filter = outdoor only</span></div>
+    </div>
+
+    <!-- Pace improvement over time -->
+    <div class="card">
+      <div class="card-title">Avg Pace Trend · Daily (min/km, lower = faster) <span class="card-title-tag">LINE CHART</span></div>
+      <svg width="100%" height="150" viewBox="0 0 460 150">
+        <line x1="40" y1="10" x2="40" y2="130" stroke="var(--border)" stroke-width="1"/>
+        <line x1="40" y1="130" x2="450" y2="130" stroke="var(--border)" stroke-width="1"/>
+        <text x="34" y="14"  fill="var(--muted)" font-size="8" text-anchor="end" font-family="'DM Mono'">12:00</text>
+        <text x="34" y="75"  fill="var(--muted)" font-size="8" text-anchor="end" font-family="'DM Mono'">10:45</text>
+        <text x="34" y="132" fill="var(--muted)" font-size="8" text-anchor="end" font-family="'DM Mono'">9:30</text>
+        <!-- Shaded improvement region -->
+        <path d="M60,80 L435,48 L435,130 L60,130 Z" fill="var(--accent)" opacity="0.04"/>
+        <!-- Trend line (improving = falling) -->
+        <path d="M60,80 L90,82 L120,78 L150,80 L180,79 L210,80 L240,78 L270,79 L300,75 L330,73 L360,70 L390,65 L420,60 L435,52"
+          fill="none" stroke="var(--accent)" stroke-width="2" opacity="0.6"/>
+        <!-- Raw pace dots -->
+        <circle cx="60"  cy="93"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="75"  cy="83"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="90"  cy="84"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="105" cy="83"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="120" cy="80"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="135" cy="82"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="150" cy="81"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="165" cy="79"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="180" cy="80"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="195" cy="79"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="210" cy="80"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="225" cy="79"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="240" cy="77"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="255" cy="62"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="270" cy="79"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="285" cy="76"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="300" cy="74"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="315" cy="71"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="330" cy="69"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="345" cy="68"  r="3" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="360" cy="60"  r="3" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="375" cy="62"  r="3" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="390" cy="58"  r="3" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="405" cy="56"  r="3" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="420" cy="48"  r="4" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="435" cy="42"  r="4" fill="var(--accent)" opacity="0.9"/>
+        <!-- Best pace annotation -->
+        <line x1="435" y1="42" x2="435" y2="130" stroke="var(--accent)" stroke-width="1" stroke-dasharray="3 2" opacity="0.4"/>
+        <text x="437" y="40" fill="var(--accent)" font-size="8" font-family="'DM Mono'">9:43 best</text>
+        <text x="60"  y="143" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">Apr 14</text>
+        <text x="245" y="143" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">May 4</text>
+        <text x="435" y="143" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">May 24</text>
+      </svg>
+      <div class="annotation"><strong>−0.92 min/km improvement</strong> in 6 weeks (11:35 → 9:43). Pace outlier on May 8 (14.9 km, unfamiliar route) does not break the trend. Driven ~2× more by cadence than stride length.</div>
+      <div class="pbi-label">Power BI visual: <span>Line chart · X = Date · Y = avg_pace_min_per_km (inverted axis: Y-axis min=12, max=9) · Reference line = personal best · Filter = outdoor only</span></div>
+    </div>
+  </div>
+
+  <!-- Row 3: Cadence growth + Cardiac Efficiency -->
+  <div class="grid-2">
+
+    <!-- Cadence trend -->
+    <div class="card">
+      <div class="card-title">Cadence Growth Over Time <span class="card-title-tag">LINE + TARGET BAND</span></div>
+      <svg width="100%" height="140" viewBox="0 0 460 140">
+        <line x1="40" y1="10" x2="40" y2="120" stroke="var(--border)" stroke-width="1"/>
+        <line x1="40" y1="120" x2="450" y2="120" stroke="var(--border)" stroke-width="1"/>
+        <!-- Target band 57-58 spm -->
+        <rect x="40" y="32" width="410" height="20" fill="var(--accent)" opacity="0.07"/>
+        <text x="452" y="44" fill="var(--accent)" font-size="8" font-family="'DM Mono'" opacity="0.8">target</text>
+        <text x="34" y="14"  fill="var(--muted)" font-size="8" text-anchor="end" font-family="'DM Mono'">60</text>
+        <text x="34" y="44"  fill="var(--accent)" font-size="8" text-anchor="end" font-family="'DM Mono'">57–58</text>
+        <text x="34" y="80"  fill="var(--muted)" font-size="8" text-anchor="end" font-family="'DM Mono'">55</text>
+        <text x="34" y="122" fill="var(--muted)" font-size="8" text-anchor="end" font-family="'DM Mono'">52</text>
+        <!-- Line -->
+        <path d="M60,92 L80,96 L100,88 L120,92 L140,92 L160,90 L180,88 L200,90 L220,88 L240,82 L260,86 L280,80 L300,78 L320,72 L340,74 L360,66 L380,64 L400,60 L420,52 L440,44"
+          fill="none" stroke="var(--warn)" stroke-width="2"/>
+        <!-- Dots coloured by whether they're in target band -->
+        <circle cx="60"  cy="92"  r="3" fill="var(--muted)" opacity="0.7"/>
+        <circle cx="80"  cy="96"  r="3" fill="var(--muted)" opacity="0.7"/>
+        <circle cx="100" cy="88"  r="3" fill="var(--muted)" opacity="0.7"/>
+        <circle cx="120" cy="92"  r="3" fill="var(--muted)" opacity="0.7"/>
+        <circle cx="140" cy="92"  r="3" fill="var(--muted)" opacity="0.7"/>
+        <circle cx="160" cy="90"  r="3" fill="var(--muted)" opacity="0.7"/>
+        <circle cx="180" cy="88"  r="3" fill="var(--muted)" opacity="0.7"/>
+        <circle cx="200" cy="90"  r="3" fill="var(--muted)" opacity="0.7"/>
+        <circle cx="220" cy="88"  r="3" fill="var(--warn)" opacity="0.8"/>
+        <circle cx="240" cy="82"  r="3" fill="var(--warn)" opacity="0.8"/>
+        <circle cx="260" cy="86"  r="3" fill="var(--warn)" opacity="0.8"/>
+        <circle cx="280" cy="80"  r="3" fill="var(--warn)" opacity="0.8"/>
+        <circle cx="300" cy="78"  r="3" fill="var(--warn)" opacity="0.8"/>
+        <circle cx="320" cy="72"  r="3" fill="var(--warn)" opacity="0.8"/>
+        <circle cx="340" cy="74"  r="3" fill="var(--warn)" opacity="0.8"/>
+        <circle cx="360" cy="66"  r="3" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="380" cy="64"  r="3" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="400" cy="60"  r="3" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="420" cy="52"  r="4" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="440" cy="44"  r="4" fill="var(--accent)" opacity="0.9"/>
+        <text x="60"  y="133" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">Apr 14</text>
+        <text x="245" y="133" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">May 4</text>
+        <text x="440" y="133" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">May 24</text>
+      </svg>
+      <div class="annotation"><strong>53.5 → 58.7 steps/min</strong> — approaching the 57–58 target zone (highlighted). Cadence is the primary driver of pace improvement, contributing ~2× more than stride length increase.</div>
+      <div class="pbi-label">Power BI visual: <span>Line chart · X = Date · Y = avg_cadence · Reference band = 57–58 (constant line pair) · Conditional point colour = if above target → accent</span></div>
+    </div>
+
+    <!-- Cardiac Efficiency Index: HR per km -->
+    <div class="card">
+      <div class="card-title">Cardiac Efficiency Index · HR × min ÷ km <span class="card-title-tag">COMBO CHART</span></div>
+      <svg width="100%" height="140" viewBox="0 0 460 140">
+        <line x1="40" y1="10" x2="40" y2="120" stroke="var(--border)" stroke-width="1"/>
+        <line x1="40" y1="120" x2="450" y2="120" stroke="var(--border)" stroke-width="1"/>
+        <text x="34" y="14"  fill="var(--muted)" font-size="8" text-anchor="end" font-family="'DM Mono'">1250</text>
+        <text x="34" y="68"  fill="var(--muted)" font-size="8" text-anchor="end" font-family="'DM Mono'">1150</text>
+        <text x="34" y="122" fill="var(--muted)" font-size="8" text-anchor="end" font-family="'DM Mono'">1050</text>
+        <!-- Columns (weekly CEI) -->
+        <rect x="55"  y="80" width="30" height="40" fill="var(--z3)" opacity="0.7" rx="2"/>
+        <rect x="115" y="70" width="30" height="50" fill="var(--z3)" opacity="0.6" rx="2"/>
+        <rect x="175" y="65" width="30" height="55" fill="var(--z2)" opacity="0.6" rx="2"/>
+        <rect x="235" y="60" width="30" height="60" fill="var(--z2)" opacity="0.6" rx="2"/>
+        <rect x="295" y="55" width="30" height="65" fill="var(--z2)" opacity="0.6" rx="2"/>
+        <rect x="355" y="48" width="30" height="72" fill="var(--accent)" opacity="0.5" rx="2"/>
+        <!-- Week labels -->
+        <text x="70"  y="133" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">W16</text>
+        <text x="130" y="133" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">W17</text>
+        <text x="190" y="133" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">W18</text>
+        <text x="250" y="133" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">W19</text>
+        <text x="310" y="133" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">W20</text>
+        <text x="370" y="133" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">W21</text>
+        <!-- Trend overlay line -->
+        <path d="M70,80 L130,70 L190,65 L250,60 L310,55 L370,48"
+          fill="none" stroke="var(--accent)" stroke-width="2"/>
+        <!-- Value labels on bars -->
+        <text x="70"  y="76" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">1228</text>
+        <text x="130" y="66" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">1206</text>
+        <text x="190" y="61" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">1188</text>
+        <text x="250" y="56" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">1172</text>
+        <text x="310" y="51" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">1158</text>
+        <text x="370" y="44" fill="var(--accent)" font-size="8" text-anchor="middle" font-family="'DM Mono'">1135</text>
+      </svg>
+      <div class="annotation"><strong>−3.5% cardiac efficiency cost</strong> over 6 weeks (1228 → 1135 HR·min/km). Lower = more efficient heart. This is the single most important metric to track for aerobic base development.</div>
+      <div class="pbi-label">Power BI visual: <span>Combo · Bars = CEI per week (DAX: DIVIDE(SUM avg_heartrate × moving_time_min, distance_km)) · Line = trend · Smaller = better (note in title)</span></div>
+    </div>
+  </div>
+
+  <!-- Row 4: HR vs Distance (cardiac cost per session) + Max HR trend -->
+  <div class="grid-2">
+
+    <!-- HR vs Distance: cardiac cost per session -->
+    <div class="card">
+      <div class="card-title">Avg HR vs Distance · Cardiac Cost per Session <span class="card-title-tag">SCATTER + TREND</span></div>
+      <svg width="100%" height="150" viewBox="0 0 460 150">
+        <line x1="40" y1="10" x2="40" y2="130" stroke="var(--border)" stroke-width="1"/>
+        <line x1="40" y1="130" x2="450" y2="130" stroke="var(--border)" stroke-width="1"/>
+        <text x="34" y="14"  fill="var(--muted)" font-size="8" text-anchor="end" font-family="'DM Mono'">135</text>
+        <text x="34" y="75"  fill="var(--muted)" font-size="8" text-anchor="end" font-family="'DM Mono'">115</text>
+        <text x="34" y="132" fill="var(--muted)" font-size="8" text-anchor="end" font-family="'DM Mono'">90</text>
+        <text x="40"  y="142" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">3km</text>
+        <text x="245" y="142" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">9km</text>
+        <text x="435" y="142" fill="var(--muted)" font-size="8" text-anchor="middle" font-family="'DM Mono'">15km</text>
+        <!-- Ideal reference: flat line (HR stable as distance grows = good adaptation) -->
+        <line x1="60" y1="75" x2="435" y2="75" stroke="var(--accent)" stroke-width="1" stroke-dasharray="4 3" opacity="0.4"/>
+        <text x="437" y="73" fill="var(--accent)" font-size="7" font-family="'DM Mono'" opacity="0.7">ideal</text>
+        <!-- April dots (higher HR for distance) — blue -->
+        <circle cx="80"  cy="80" r="3.5" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="95"  cy="78" r="3.5" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="105" cy="82" r="3.5" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="140" cy="79" r="3.5" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="145" cy="80" r="3.5" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="155" cy="78" r="3.5" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="165" cy="77" r="3.5" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="175" cy="79" r="3.5" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="185" cy="77" r="3.5" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="215" cy="76" r="3.5" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="225" cy="78" r="3.5" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="235" cy="77" r="3.5" fill="var(--accent3)" opacity="0.8"/>
+        <circle cx="238" cy="78" r="3.5" fill="var(--accent3)" opacity="0.8"/>
+        <!-- May dots (lower HR at same/longer distance) — green -->
+        <circle cx="240" cy="74" r="3.5" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="245" cy="73" r="3.5" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="248" cy="72" r="3.5" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="255" cy="70" r="3.5" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="260" cy="69" r="3.5" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="265" cy="70" r="3.5" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="270" cy="68" r="3.5" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="280" cy="58" r="3.5" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="285" cy="65" r="3.5" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="290" cy="55" r="3.5" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="295" cy="60" r="3.5" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="348" cy="65" r="3.5" fill="var(--accent)" opacity="0.9"/>
+        <circle cx="360" cy="58" r="4" fill="var(--accent)" opacity="0.9"/>
+        <!-- Legend -->
+        <circle cx="50" cy="18" r="4" fill="var(--accent3)"/>
+        <text x="58" y="22" fill="var(--muted)" font-size="8" font-family="'DM Mono'">April sessions</text>
+        <circle cx="130" cy="18" r="4" fill="var(--accent)"/>
+        <text x="138" y="22" fill="var(--muted)" font-size="8" font-family="'DM Mono'">May sessions</text>
+      </svg>
+      <div class="annotation"><strong>May cluster sits lower than April</strong> at the same distance band. Same 10 km walk costs ~3–4 bpm less in May. This is textbook cardiac adaptation — the heart becomes more efficient at the same workload.</div>
+      <div class="pbi-label">Power BI visual: <span>Scatter · X = distance_km · Y = avg_heartrate · Colour = Month (April = blue, May = green) · Reference band horizontal at Zone 2 ceiling</span></div>
+    </div>
+
+    <!-- Weekly summary table -->
+    <div class="card">
+      <div class="card-title">Weekly Performance Summary <span class="card-title-tag">MATRIX TABLE</span></div>
+      <table class="act-table">
+        <thead>
+          <tr>
+            <th>Week</th>
+            <th>Sessions</th>
+            <th>Distance</th>
+            <th>Avg HR</th>
+            <th>Avg Pace</th>
+            <th>Avg Cadence</th>
+            <th>Δ Pace</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>W16</td><td>4</td><td>20.8 km</td><td>113</td><td>10:37</td><td>53.6</td><td style="color:var(--muted)">—</td></tr>
+          <tr><td>W17</td><td>6</td><td>47.4 km</td><td>111</td><td>10:52</td><td>54.5</td><td style="color:var(--muted)">−0:15</td></tr>
+          <tr><td>W18</td><td>7</td><td>60.4 km</td><td>111</td><td>10:47</td><td>55.0</td><td style="color:var(--accent)">+0:05</td></tr>
+          <tr><td>W19</td><td>9</td><td>56.6 km</td><td>109</td><td>10:41</td><td>55.2</td><td style="color:var(--accent)">+0:06</td></tr>
+          <tr><td>W20</td><td>7</td><td>45.1 km</td><td>117</td><td>10:32</td><td>55.7</td><td style="color:var(--accent)">+0:09</td></tr>
+          <tr><td>W21</td><td>8</td><td>45.8 km</td><td>123</td><td>10:13</td><td>57.4</td><td style="color:var(--accent)">+0:19</td></tr>
+          <tr><td>W22</td><td>2</td><td>12.1 km</td><td>131</td><td>9:43</td><td>58.7</td><td style="color:var(--accent)">+0:30</td></tr>
+        </tbody>
+      </table>
+      <div class="annotation">W18 and W19 are the highest volume weeks (60+ km). Note <strong>W21 breakthrough</strong>: pace drops below 10:20 for the first time while cadence crosses 57 — the target threshold.</div>
+      <div class="pbi-label">Power BI visual: <span>Matrix · Rows = YearWeek · Columns = # Activities, Total km, Avg HR, Avg Pace, Avg Cadence · Conditional formatting: green = improving Δ</span></div>
+    </div>
+  </div>
+
+</div><!-- /page 3 -->
+
+
+<script>
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+
+</body>
+</html>

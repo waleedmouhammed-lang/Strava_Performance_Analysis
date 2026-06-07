@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strava Performance Analysis — Star Schema Data Model</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #ffffff;
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 40px 32px 48px;
+  }
+
+  /* ── Header ─────────────────────────────────── */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 36px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #1a1a2e;
+  }
+  .header-left {}
+  .project-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    color: #6b6b7e;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .title {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: #1a1a2e;
+    line-height: 1.15;
+  }
+  .subtitle {
+    font-size: 13px;
+    font-weight: 400;
+    color: #6b6b7e;
+    margin-top: 4px;
+  }
+  .header-meta {
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #9999aa;
+    line-height: 1.7;
+  }
+  .header-meta span { color: #1a1a2e; font-weight: 500; }
+
+  /* ── Diagram canvas ──────────────────────────── */
+  .canvas {
+    width: 100%;
+    position: relative;
+  }
+
+  /* ── Table cards ─────────────────────────────── */
+  .tbl {
+    position: absolute;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.08);
+  }
+  .tbl-header {
+    padding: 9px 14px 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tbl-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 11px;
+  }
+  .tbl-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+  .tbl-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.06em;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .tbl-divider {
+    height: 1px;
+    margin: 0;
+  }
+  .tbl-body {
+    background: #ffffff;
+    padding: 8px 0 10px;
+  }
+  .col-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 3px 14px;
+    font-size: 11.5px;
+    line-height: 1.4;
+  }
+  .col-row:hover { background: #f5f5f8; }
+  .col-key {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    width: 24px;
+    flex-shrink: 0;
+    letter-spacing: 0.04em;
+  }
+  .col-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #2a2a3e;
+    flex: 1;
+  }
+  .col-name.fk { color: #6060a0; }
+  .col-type {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: #9999aa;
+    margin-left: 8px;
+    text-align: right;
+  }
+  .col-section-label {
+    font-family: 'IBM Plex Sans', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #aaaabc;
+    padding: 6px 14px 2px;
+  }
+  .tbl-section-divider {
+    height: 1px;
+    background: #f0f0f5;
+    margin: 4px 14px;
+  }
+
+  /* ── Colour themes per table ─────────────────── */
+  /* FACT */
+  .fact .tbl-header { background: #1a1a2e; }
+  .fact .tbl-name   { color: #ffffff; }
+  .tbl-badge.fact-b { background: #ffffff22; color: #ffffffcc; }
+  .fact .tbl-icon   { background: #ffffff22; color: #fff; }
+  .fact .tbl-divider { background: #2e2e4a; }
+
+  /* DIM Date */
+  .dim-date .tbl-header { background: #0f5c4a; }
+  .dim-date .tbl-name   { color: #ffffff; }
+  .tbl-badge.date-b  { background: #ffffff22; color: #ffffffcc; }
+  .dim-date .tbl-icon { background: #ffffff22; color: #fff; }
+  .dim-date .tbl-divider { background: #0d4f3f; }
+
+  /* DIM Activity */
+  .dim-act .tbl-header { background: #7c2d12; }
+  .dim-act .tbl-name   { color: #ffffff; }
+  .tbl-badge.act-b   { background: #ffffff22; color: #ffffffcc; }
+  .dim-act .tbl-icon  { background: #ffffff22; color: #fff; }
+  .dim-act .tbl-divider { background: #6b2510; }
+
+  /* DIM Geography */
+  .dim-geo .tbl-header { background: #854d0e; }
+  .dim-geo .tbl-name   { color: #ffffff; }
+  .tbl-badge.geo-b   { background: #ffffff22; color: #ffffffcc; }
+  .dim-geo .tbl-icon  { background: #ffffff22; color: #fff; }
+  .dim-geo .tbl-divider { background: #703f0a; }
+
+  /* DIM HR Zone */
+  .dim-hr .tbl-header { background: #1e3a6e; }
+  .dim-hr .tbl-name   { color: #ffffff; }
+  .tbl-badge.hr-b    { background: #ffffff22; color: #ffffffcc; }
+  .dim-hr .tbl-icon   { background: #ffffff22; color: #fff; }
+  .dim-hr .tbl-divider { background: #192f5a; }
+
+  /* DIM Athlete */
+  .dim-ath .tbl-header { background: #4a4a5a; }
+  .dim-ath .tbl-name   { color: #ffffff; }
+  .tbl-badge.ath-b   { background: #ffffff22; color: #ffffffcc; }
+  .dim-ath .tbl-icon  { background: #ffffff22; color: #fff; }
+  .dim-ath .tbl-divider { background: #3a3a4a; }
+
+  /* key colour chips */
+  .col-key.pk { color: #d97706; }
+  .col-key.fk { color: #6060a0; }
+  .col-key.m  { color: #059669; }
+
+  /* ── Legend ──────────────────────────────────── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    margin-top: 28px;
+    padding: 14px 18px;
+    border: 1px solid #e5e5ee;
+    border-radius: 6px;
+    background: #fafafa;
+  }
+  .legend-title {
+    width: 100%;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #9999aa;
+    margin-bottom: 6px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11.5px;
+    color: #444455;
+  }
+  .legend-swatch {
+    width: 28px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .legend-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .chip-pk { background: #fef3c7; color: #d97706; }
+  .chip-fk { background: #ede9fe; color: #6060a0; }
+  .chip-m  { background: #d1fae5; color: #059669; }
+  .legend-sep {
+    width: 1px;
+    height: 24px;
+    background: #e0e0ee;
+    margin: 0 4px;
+  }
+
+  /* ── SVG connector layer ─────────────────────── */
+  #connectors {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  /* ── Footer ──────────────────────────────────── */
+  .footer {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e5ee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: #aaaabc;
+  }
+  .footer-note { font-style: italic; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="project-label">Power BI · Semantic Model Design</div>
+    <div class="title">Performance Analysis — Star Schema</div>
+    <div class="subtitle">Proposed data model derived from Strava Activities flat table</div>
+  </div>
+  <div class="header-meta">
+    Source table<br><span>Strava Activities</span><br><br>
+    Activities<br><span>46 rows</span><br><br>
+    Date range<br><span>Apr 13 – May 24, 2026</span>
+  </div>
+</div>
+
+<!-- Diagram canvas (height set by JS) -->
+<div class="canvas" id="canvas">
+  <svg id="connectors" aria-hidden="true"></svg>
+
+  <!-- ══ FACT TABLE ══ -->
+  <div class="tbl fact" id="tbl-fact" style="left:310px; top:230px; width:240px;">
+    <div class="tbl-header">
+      <div class="tbl-icon">⚡</div>
+      <div class="tbl-name">Fact_Activities</div>
+      <div class="tbl-badge fact-b">FACT</div>
+    </div>
+    <div class="tbl-divider"></div>
+    <div class="tbl-body">
+      <div class="col-section-label">Keys</div>
+      <div class="col-row"><span class="col-key pk">PK</span><span class="col-name">activity_id</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key fk">FK</span><span class="col-name fk">date_key</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key fk">FK</span><span class="col-name fk">activity_type_key</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key fk">FK</span><span class="col-name fk">geography_key</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key fk">FK</span><span class="col-name fk">hr_zone_key</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key fk">FK</span><span class="col-name fk">athlete_key</span><span class="col-type">INT</span></div>
+      <div class="tbl-section-divider"></div>
+      <div class="col-section-label">Measures</div>
+      <div class="col-row"><span class="col-key m">M</span><span class="col-name">distance_km</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-key m">M</span><span class="col-name">moving_time_min</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-key m">M</span><span class="col-name">elapsed_time_min</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-key m">M</span><span class="col-name">elevation_gain</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-key m">M</span><span class="col-name">pace_min_per_km</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-key m">M</span><span class="col-name">avg_speed_kmh</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-key m">M</span><span class="col-name">max_speed_kmh</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-key m">M</span><span class="col-name">avg_heartrate</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-key m">M</span><span class="col-name">max_heartrate</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key m">M</span><span class="col-name">avg_cadence</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-key m">M</span><span class="col-name">suffer_score</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key m">M</span><span class="col-name">elev_high</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-key m">M</span><span class="col-name">elev_low</span><span class="col-type">FLOAT</span></div>
+    </div>
+  </div>
+
+  <!-- ══ DIM: Date — top ══ -->
+  <div class="tbl dim-date" id="tbl-date" style="left:610px; top:510px; width:240px;">
+    <div class="tbl-header">
+      <div class="tbl-icon">📅</div>
+      <div class="tbl-name">Dim_Date</div>
+      <div class="tbl-badge date-b">DIM · M TABLE</div>
+    </div>
+    <div class="tbl-divider"></div>
+    <div class="tbl-body">
+      <div class="col-row"><span class="col-key pk">PK</span><span class="col-name">date_key</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">date</span><span class="col-type">DATE</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">year</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">month · month_name</span><span class="col-type">INT/TXT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">week_of_year</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">day_of_week · day_name</span><span class="col-type">INT/TXT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">hour_of_day</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">time_of_day</span><span class="col-type">TXT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">is_weekend</span><span class="col-type">BOOL</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">start_date_local</span><span class="col-type">DATETIME</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">timezone · utc_offset</span><span class="col-type">TXT/INT</span></div>
+    </div>
+  </div>
+
+  <!-- ══ DIM: Activity Type — left top ══ -->
+  <div class="tbl dim-act" id="tbl-act" style="left:24px; top:120px; width:220px;">
+    <div class="tbl-header">
+      <div class="tbl-icon">🏃</div>
+      <div class="tbl-name">Dim_ActivityType</div>
+      <div class="tbl-badge act-b">DIM</div>
+    </div>
+    <div class="tbl-divider"></div>
+    <div class="tbl-body">
+      <div class="col-row"><span class="col-key pk">PK</span><span class="col-name">activity_type_key</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">activity_name</span><span class="col-type">TXT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">is_outdoor</span><span class="col-type">BOOL</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">distance_bucket</span><span class="col-type">TXT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">has_route</span><span class="col-type">BOOL</span></div>
+    </div>
+  </div>
+
+  <!-- ══ DIM: Geography — left bottom ══ -->
+  <div class="tbl dim-geo" id="tbl-geo" style="left:24px; top:380px; width:220px;">
+    <div class="tbl-header">
+      <div class="tbl-icon">📍</div>
+      <div class="tbl-name">Dim_Geography</div>
+      <div class="tbl-badge geo-b">DIM</div>
+    </div>
+    <div class="tbl-divider"></div>
+    <div class="tbl-body">
+      <div class="col-row"><span class="col-key pk">PK</span><span class="col-name">geography_key</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">start_lat</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">start_lng</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">end_lat</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">end_lng</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">timezone</span><span class="col-type">TXT</span></div>
+    </div>
+  </div>
+
+  <!-- ══ DIM: HR Zone — right top ══ -->
+  <div class="tbl dim-hr" id="tbl-hr" style="left:610px; top:120px; width:200px;">
+    <div class="tbl-header">
+      <div class="tbl-icon">❤️</div>
+      <div class="tbl-name">Dim_HRZone</div>
+      <div class="tbl-badge hr-b">DIM</div>
+    </div>
+    <div class="tbl-divider"></div>
+    <div class="tbl-body">
+      <div class="col-row"><span class="col-key pk">PK</span><span class="col-name">hr_zone_key</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">hr_zone</span><span class="col-type">TXT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">zone_label</span><span class="col-type">TXT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">sort_order</span><span class="col-type">INT</span></div>
+    </div>
+  </div>
+
+  <!-- ══ DIM: Athlete — right bottom ══ -->
+  <div class="tbl dim-ath" id="tbl-ath" style="left:610px; top:360px; width:200px;">
+    <div class="tbl-header">
+      <div class="tbl-icon">👤</div>
+      <div class="tbl-name">Dim_Athlete</div>
+      <div class="tbl-badge ath-b">DIM</div>
+    </div>
+    <div class="tbl-divider"></div>
+    <div class="tbl-body">
+      <div class="col-row"><span class="col-key pk">PK</span><span class="col-name">athlete_key</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">athlete_id</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">— extendable —</span><span class="col-type"></span></div>
+    </div>
+  </div>
+
+</div><!-- /canvas -->
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-title">Legend</div>
+
+  <div class="legend-item">
+    <div class="legend-swatch" style="background:#1a1a2e;"></div>
+    Fact table
+  </div>
+  <div class="legend-item">
+    <div class="legend-swatch" style="background:#0f5c4a;"></div>
+    Dim_Date (Power Query M)
+  </div>
+  <div class="legend-item">
+    <div class="legend-swatch" style="background:#7c2d12;"></div>
+    Dim_ActivityType
+  </div>
+  <div class="legend-item">
+    <div class="legend-swatch" style="background:#854d0e;"></div>
+    Dim_Geography
+  </div>
+  <div class="legend-item">
+    <div class="legend-swatch" style="background:#1e3a6e;"></div>
+    Dim_HRZone
+  </div>
+  <div class="legend-item">
+    <div class="legend-swatch" style="background:#4a4a5a;"></div>
+    Dim_Athlete
+  </div>
+
+  <div class="legend-sep"></div>
+
+  <div class="legend-item">
+    <span class="legend-chip chip-pk">PK</span>
+    Primary key (surrogate INT)
+  </div>
+  <div class="legend-item">
+    <span class="legend-chip chip-fk">FK</span>
+    Foreign key → dimension PK
+  </div>
+  <div class="legend-item">
+    <span class="legend-chip chip-m">M</span>
+    Numeric measure column
+  </div>
+
+  <div class="legend-sep"></div>
+
+  <div class="legend-item" style="font-size:11px; color:#6b6b7e;">
+    ——— &nbsp; One-to-many relationship (Dim → Fact)
+  </div>
+  <div class="legend-item" style="font-size:11px; color:#6b6b7e;">
+    ╌╌╌ &nbsp; Extendable / stub dimension
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div class="footer-note">All surrogate keys are auto-generated integers · Relationships are single-direction (filter flows from Dim → Fact)</div>
+  <div>Power BI Desktop · Compatibility Level 1600</div>
+</div>
+
+<script>
+// Draw SVG connectors between tables after layout is resolved
+function pt(el, side) {
+  const c = document.getElementById('canvas');
+  const cb = c.getBoundingClientRect();
+  const b  = el.getBoundingClientRect();
+  const cx = b.left - cb.left + b.width  / 2;
+  const cy = b.top  - cb.top  + b.height / 2;
+  if (side === 'top')    return { x: cx,           y: b.top  - cb.top };
+  if (side === 'bottom') return { x: cx,           y: b.bottom - cb.top };
+  if (side === 'left')   return { x: b.left - cb.left,  y: cy };
+  if (side === 'right')  return { x: b.right - cb.left, y: cy };
+}
+
+function drawConn(svg, from, to, color, dashed) {
+  const dx = (to.x - from.x) * 0.5;
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  const d = `M${from.x},${from.y} C${from.x+dx},${from.y} ${to.x-dx},${to.y} ${to.x},${to.y}`;
+  path.setAttribute('d', d);
+  path.setAttribute('fill','none');
+  path.setAttribute('stroke', color);
+  path.setAttribute('stroke-width','1.5');
+  path.setAttribute('opacity','0.55');
+  if (dashed) path.setAttribute('stroke-dasharray','5 4');
+  // crow's foot (many side = fact)
+  const marker = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  marker.setAttribute('cx', to.x);
+  marker.setAttribute('cy', to.y);
+  marker.setAttribute('r','3.5');
+  marker.setAttribute('fill', color);
+  marker.setAttribute('opacity','0.7');
+  svg.appendChild(path);
+  svg.appendChild(marker);
+  // small tick on dim side
+  const tick = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  tick.setAttribute('cx', from.x);
+  tick.setAttribute('cy', from.y);
+  tick.setAttribute('r','2');
+  tick.setAttribute('fill','none');
+  tick.setAttribute('stroke', color);
+  tick.setAttribute('stroke-width','1.5');
+  tick.setAttribute('opacity','0.7');
+  svg.appendChild(tick);
+}
+
+function draw() {
+  const svg  = document.getElementById('connectors');
+  const fact = document.getElementById('tbl-fact');
+  const date = document.getElementById('tbl-date');
+  const act  = document.getElementById('tbl-act');
+  const geo  = document.getElementById('tbl-geo');
+  const hr   = document.getElementById('tbl-hr');
+  const ath  = document.getElementById('tbl-ath');
+
+  // size canvas to tallest right column
+  const canvas = document.getElementById('canvas');
+  const els = [fact, date, act, geo, hr, ath];
+  let maxBottom = 0;
+  els.forEach(el => {
+    const bottom = el.offsetTop + el.offsetHeight;
+    if (bottom > maxBottom) maxBottom = bottom;
+  });
+  canvas.style.height = (maxBottom + 20) + 'px';
+  svg.setAttribute('viewBox',`0 0 ${canvas.offsetWidth} ${maxBottom + 20}`);
+
+  svg.innerHTML = '';
+
+  // Dim → Fact connections
+  // Date left → Fact right (bottom area)
+  const dateL = pt(date,'left');
+  const factR = pt(fact,'right');
+  drawConn(svg, { x: dateL.x, y: dateL.y }, { x: factR.x, y: factR.y + 60 }, '#0f5c4a');
+  // ActivityType right → Fact left (upper)
+  const actR  = pt(act,'right');
+  const factL = pt(fact,'left');
+  drawConn(svg, { x: actR.x, y: actR.y }, { x: factL.x, y: factL.y - 40 }, '#7c2d12');
+  // Geography right → Fact left (lower)
+  const geoR = pt(geo,'right');
+  drawConn(svg, { x: geoR.x, y: geoR.y }, { x: factL.x, y: factL.y + 20 }, '#854d0e');
+  // HRZone left → Fact right (upper)
+  const hrL   = pt(hr,'left');
+  drawConn(svg, { x: hrL.x, y: hrL.y }, { x: factR.x, y: factR.y - 40 }, '#1e3a6e');
+  // Athlete left → Fact right (middle)
+  const athL = pt(ath,'left');
+  drawConn(svg, { x: athL.x, y: athL.y }, { x: factR.x, y: factR.y + 20 }, '#4a4a5a', true);
+}
+
+window.addEventListener('load', () => { draw(); });
+window.addEventListener('resize', () => { draw(); });
+</script>
+</body>
+</html>
